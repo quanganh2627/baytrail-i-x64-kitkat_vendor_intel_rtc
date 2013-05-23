@@ -26,22 +26,16 @@ TOP_LOCAL_PATH:= $(call my-dir)
 LOCAL_PATH:= $(TOP_LOCAL_PATH)
 include $(CLEAR_VARS)
 
-WEBRTC_JAVA_SRC_PATH:=../../../../vendor/intel/PRIVATE/rtc/webrtc/third_party/webrtc
-
 LOCAL_MODULE_TAGS := optional
 
+LOCAL_STATIC_JAVA_LIBRARIES := webrtc_video_render webrtc_video_capture
+
 LOCAL_SRC_FILES := \
-    $(call all-subdir-java-files) \
-    $(WEBRTC_JAVA_SRC_PATH)/modules/video_capture/android/java/org/webrtc/videoengine/VideoCaptureAndroid.java \
-    $(WEBRTC_JAVA_SRC_PATH)/modules/video_capture/android/java/org/webrtc/videoengine/CaptureCapabilityAndroid.java \
-    $(WEBRTC_JAVA_SRC_PATH)/modules/video_capture/android/java/org/webrtc/videoengine/VideoCaptureDeviceInfoAndroid.java \
-    $(WEBRTC_JAVA_SRC_PATH)/modules/video_render/android/java/org/webrtc/videoengine/ViESurfaceRenderer.java \
-    $(WEBRTC_JAVA_SRC_PATH)/modules/video_render/android/java/org/webrtc/videoengine/ViEAndroidGLES20.java \
-    $(WEBRTC_JAVA_SRC_PATH)/modules/video_render/android/java/org/webrtc/videoengine/ViERenderer.java
+    $(call all-subdir-java-files)
 
 LOCAL_PACKAGE_NAME := videoP2P
 
-#LOCAL_JNI_SHARED_LIBRARIES := libwebrtc-video-p2p-jni
+LOCAL_REQUIRED_MODULES := libwebrtc-video-p2p-jni
 
 LOCAL_PROGUARD_ENABLED := disabled
 
