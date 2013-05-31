@@ -98,47 +98,49 @@ void Conductor::SetImageOrientation(int degrees)
 }
 
 bool Conductor::SetVideo(bool enable) {
-	std::map<std::string, talk_base::scoped_refptr<webrtc::MediaStreamInterface> >::iterator it
-		= active_streams_.find(kStreamLabel);
+  std::map<std::string, talk_base::scoped_refptr<webrtc::MediaStreamInterface> >::iterator it
+      = active_streams_.find(kStreamLabel);
 
-	if(it == active_streams_.end())	{
-		LOG(LS_ERROR) << "Stream list is empty.";
-		return false;
-	}
+  if(it == active_streams_.end()) {
+      LOG(LS_ERROR) << "Stream list is empty.";
+      return false;
+  }
 
-	talk_base::scoped_refptr<webrtc::MediaStreamInterface> stream = it->second;
+  talk_base::scoped_refptr<webrtc::MediaStreamInterface> stream = it->second;
 
-	stream->AddRef();
+  stream->AddRef();
 
-	webrtc::VideoTrackVector tracks = stream->GetVideoTracks();
-	if (!tracks.empty()) {
-		webrtc::VideoTrackInterface* track = tracks[0];
-		track->set_enabled(enable);
-	}
+  webrtc::VideoTrackVector tracks = stream->GetVideoTracks();
+  if (!tracks.empty()) {
+      webrtc::VideoTrackInterface* track = tracks[0];
+      track->set_enabled(enable);
+  }
 
-	stream->Release();
+  stream->Release();
+  return true;
 }
 
 bool Conductor::SetVoice(bool enable) {
-	std::map<std::string, talk_base::scoped_refptr<webrtc::MediaStreamInterface> >::iterator it
-		= active_streams_.find(kStreamLabel);
+  std::map<std::string, talk_base::scoped_refptr<webrtc::MediaStreamInterface> >::iterator it
+      = active_streams_.find(kStreamLabel);
 
-	if(it == active_streams_.end())	{
-		LOG(LS_ERROR) << "Stream list is empty.";
-		return false;
-	}
+  if(it == active_streams_.end()) {
+    LOG(LS_ERROR) << "Stream list is empty.";
+    return false;
+  }
 
-	talk_base::scoped_refptr<webrtc::MediaStreamInterface> stream = it->second;
+  talk_base::scoped_refptr<webrtc::MediaStreamInterface> stream = it->second;
 
-	stream->AddRef();
+  stream->AddRef();
 
-	webrtc::AudioTrackVector tracks = stream->GetAudioTracks();
-	if (!tracks.empty()) {
-		webrtc::AudioTrackInterface* track = tracks[0];
-		track->set_enabled(enable);
-	}
+  webrtc::AudioTrackVector tracks = stream->GetAudioTracks();
+  if (!tracks.empty()) {
+    webrtc::AudioTrackInterface* track = tracks[0];
+    track->set_enabled(enable);
+  }
 
-	stream->Release();
+  stream->Release();
+  return true;
 }
 
 void Conductor::Close() {
@@ -326,7 +328,7 @@ void Conductor::AddStreams(bool video, bool audio) {
 
   if(video) {
     LOG(LS_INFO) << "Adding video track";
-	talk_base::scoped_refptr<webrtc::VideoTrackInterface> video_track(
+    talk_base::scoped_refptr<webrtc::VideoTrackInterface> video_track(
       peer_connection_factory_->CreateVideoTrack(
           kVideoLabel,
           peer_connection_factory_->CreateVideoSource(OpenVideoCaptureDevice(),
@@ -356,12 +358,12 @@ void Conductor::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
   if (client_->IsIncomingCall()) {
     LOG(INFO) << "Conductor::OnSuccess SendAccept";
     kxmpp_thread_->SendAccept(desc->description()->Copy());
-	while(!candidate_queue_.empty()) {
-		LOG(INFO) << "Conductor::OnSuccess add queued candidate back";
-		const webrtc::IceCandidateInterface* c = candidate_queue_.back();
-		candidate_queue_.pop_back();
-		AddIceCandidate(c);
-	}
+    while(!candidate_queue_.empty()) {
+        LOG(INFO) << "Conductor::OnSuccess add queued candidate back";
+        const webrtc::IceCandidateInterface* c = candidate_queue_.back();
+        candidate_queue_.pop_back();
+        AddIceCandidate(c);
+    }
   } else {
     LOG(INFO) << "Conductor::OnSuccess SendOffer";
     kxmpp_thread_->SendOffer(peer_name_, desc->description()->Copy());
@@ -378,10 +380,10 @@ void Conductor::AddIceCandidate(const webrtc::IceCandidateInterface* candidate)
   LOG(INFO) << "Conductor::AddIceCandidate";
   if (peer_connection_.get()) {
     peer_connection_->AddIceCandidate(candidate);
-	delete candidate;
+    delete candidate;
   } else {
-	LOG(INFO) << "Conductor::AddIceCandidate failed, enqueue for now";
-	candidate_queue_.push_back(candidate);
+    LOG(INFO) << "Conductor::AddIceCandidate failed, enqueue for now";
+    candidate_queue_.push_back(candidate);
   }
 }
 
@@ -405,6 +407,6 @@ void Conductor::UpdateIceServers(const webrtc::JsepInterface::IceServers *iceser
 }
 
 void Conductor::ClearCandidates() {
-	LOG(INFO) << "Conductor::ClearCandidates";
-	candidate_queue_.clear();
+    LOG(INFO) << "Conductor::ClearCandidates";
+    candidate_queue_.clear();
 }

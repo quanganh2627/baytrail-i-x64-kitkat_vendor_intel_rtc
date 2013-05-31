@@ -69,7 +69,7 @@
 #define LOGE(...) (void)0
 #endif
 
-#define WEBRTC_LOG_TAG	"*WEBRTCN-VideoClient*"
+#define WEBRTC_LOG_TAG  "*WEBRTCN-VideoClient*"
 
 #include "trace.h"
 #include <android/log.h>
@@ -149,7 +149,7 @@ Java_org_webrtc_videoP2P_VideoClient_Login(
   const char* loginDomainNative = env->GetStringUTFChars(loginDomain, NULL);
   const char* loginServerNative = env->GetStringUTFChars(loginServer, NULL);
 
-  if(!usernameNative && !passwordNative && !loginDomainNative)
+  if(!usernameNative || !passwordNative || !loginDomainNative)
   {
     LOGE("Username/Password or Domain not set");
     return -1;
@@ -221,21 +221,21 @@ Java_org_webrtc_videoP2P_VideoClient_PlaceCall(
         JNIEnv * env,
         jobject, jstring user, jboolean video, jboolean audio)
 {
-    LOGI("PlaceCall video=%d, audio=%d", video, audio);
-	int status;
-	  bool isAttached = false;
+  LOGI("PlaceCall video=%d, audio=%d", video, audio);
+  int status;
+  bool isAttached = false;
 
-	  status = gJavaVM->GetEnv((void **) &env, JNI_VERSION_1_4);
-	  if(status < 0) {
-	    LOGI("callback_handler_ext: failed to get JNI environment, assuming native thread");
-	    status = gJavaVM->AttachCurrentThread(&env, NULL);
-	    if(status < 0) {
-	      LOGE("ashoka: place call: failed to attach "
-	      "current thread");
-	      return -1;
-	    }
-	    isAttached = true;
-	  }
+  status = gJavaVM->GetEnv((void **) &env, JNI_VERSION_1_4);
+  if(status < 0) {
+    LOGI("callback_handler_ext: failed to get JNI environment, assuming native thread");
+    status = gJavaVM->AttachCurrentThread(&env, NULL);
+    if(status < 0) {
+      LOGE("ashoka: place call: failed to attach "
+      "current thread");
+      return -1;
+    }
+    isAttached = true;
+  }
 
   const char* userNative = env->GetStringUTFChars(user, NULL);
   if(userNative && xmpp_thread_){
@@ -248,7 +248,7 @@ Java_org_webrtc_videoP2P_VideoClient_PlaceCall(
   if(isAttached) {
      gJavaVM->DetachCurrentThread();
    }
-	return 0;
+  return 0;
 }
 
 JNIEXPORT jint JNICALL
@@ -292,7 +292,7 @@ Java_org_webrtc_videoP2P_VideoClient_GetCaller(
         JNIEnv * env,
         jobject)
 {
-  jstring js;
+  jstring js = NULL;
   LOGI("GetCaller");
   if(xmpp_thread_){
     std::string caller;
@@ -332,11 +332,11 @@ Java_org_webrtc_videoP2P_VideoClient_SetVoice(
 JNIEXPORT jboolean JNICALL
     Java_org_webrtc_videoP2P_VideoClient_IsTestModeActive
   (JNIEnv *, jobject ) {
-	LOGI("IsTestModeActive");
+  LOGI("IsTestModeActive");
 #ifdef VIDEOP2P_TESTMODE
-	return true;
+  return true;
 #else
-	return false;
+  return false;
 #endif
 }
 
@@ -351,6 +351,7 @@ Java_org_webrtc_videoP2P_VideoClient_Destroy(
     env->DeleteGlobalRef(reinterpret_cast<jobject>(remoteSurface_));
   }
 */
+  return 0;
 }
 
 void Terminate(){
@@ -459,7 +460,7 @@ void callback_handler(const char *methodname, short code) {
   //As well due to the problem below I can't use a method with
   //short natively and string seems to be the only one that works.
   char buf[2];
-  sprintf(buf,"%d", code);
+  snprintf(buf,2,"%d",code);
   jstring js = env->NewStringUTF(buf);
   // End Bad hack.
 
@@ -510,7 +511,7 @@ void callback_handler_ext(const char *methodname, short code, const char *data) 
   //As well due to the problem below I can't use a method with
   //short natively and string seems to be the only one that works.
   char buf[2];
-  sprintf(buf,"%d", code);
+  snprintf(buf,2,"%d",code);
   jstring js = env->NewStringUTF(buf);
   // End Bad hack.
 

@@ -95,6 +95,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoP2P_VideoClient_SetRemoteSurfaceView
     if (remoteSurface == NULL) return 0;
     remoteSurfaceView_ = (void*)env->NewGlobalRef(remoteSurface);
     LOG(INFO) << "SetRemoteSurfaceView to " << remoteSurfaceView_;
+    return 0;
 }
 
 void* GetRemoteSurfaceView() { return remoteSurfaceView_; }
@@ -106,6 +107,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoP2P_VideoClient_SetRemoteSurface(
     if (remoteSurface == NULL) return 0;
     remoteSurface_ = (void*)env->NewGlobalRef(remoteSurface);
     LOG(INFO) << "SetRemoteSurface to " << remoteSurface_;
+    return 0;
 }
 void* GetRemoteSurface() { return remoteSurface_; }
 
