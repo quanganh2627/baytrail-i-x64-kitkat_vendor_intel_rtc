@@ -28,6 +28,8 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE_TAGS := optional
 
+LOCAL_C_INCLUDES := $(TARGET_OUT_HEADERS)/webrtc
+
 LOCAL_STATIC_JAVA_LIBRARIES := webrtc_video_render webrtc_video_capture
 
 LOCAL_SRC_FILES := \
