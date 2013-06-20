@@ -467,7 +467,7 @@ void GCallClient::MakeCallTo(const std::string& name, const cricket::SessionDesc
   // otherwise, it's a friend
   for (RosterMap::iterator iter = roster_->begin();
       iter != roster_->end(); ++iter) {
-    if (iter->second.jid.BareEquals(callto_jid)) {
+    if (iter->second.jid==callto_jid) {
       found = true;
       found_jid = iter->second.jid;
       break;
@@ -511,6 +511,7 @@ void GCallClient::ReceiveReject() {
 
 void GCallClient::HangUp() {
   LOG(INFO) << "GCallClient::HangUp";
+  incoming_call_ = false;
   session_->TerminateWithReason(cricket::STR_TERMINATE_SUCCESS);
 }
 
@@ -533,7 +534,7 @@ void GCallClient::OnJingleInfo(const std::string& token,
                     const std::vector<talk_base::SocketAddress>& stun_hosts)
 {
    std::vector<talk_base::SocketAddress>::const_iterator iter;
-   webrtc::JsepInterface::IceServers *iceservers = new webrtc::JsepInterface::IceServers();
+   webrtc::PeerConnectionInterface::IceServers *iceservers = new webrtc::PeerConnectionInterface::IceServers();
 
    for(iter = stun_hosts.begin(); iter != stun_hosts.end(); iter++) {
       webrtc::PeerConnectionInterface::IceServer server;

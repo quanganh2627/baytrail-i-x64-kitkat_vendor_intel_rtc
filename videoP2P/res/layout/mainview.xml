@@ -34,15 +34,6 @@
          android:text="@string/login"
          android:onClick="sendLogin"/>
      
-      
-      <Button
-         android:id="@+id/Destroy"
-         android:layout_width="wrap_content"
-         android:layout_height="wrap_content"
-         android:layout_marginTop="30px"
-         android:text="@string/close"
-         android:layout_centerInParent="true"/>
-      
      <LinearLayout
             android:id="@+id/localPreview"
             android:layout_width="120dp"

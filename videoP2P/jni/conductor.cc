@@ -30,6 +30,7 @@
 #include <utility>
 
 #include "talk/base/common.h"
+#include "talk/media/base/videocommon.h"
 #include "talk/base/logging.h"
 #include "defaults.h"
 #include "talk/media/devices/devicemanager.h"
@@ -62,7 +63,6 @@ class DummySetSessionDescriptionObserver
 Conductor::Conductor(KXmppThread *kxmpp_thread, GCallClient *client)
   : peer_name_(""),
     kxmpp_thread_(kxmpp_thread),
-    capturer_(NULL),
     client_(client),
     iceservers_(NULL),
     imageOrientation_(0) {
@@ -75,12 +75,6 @@ Conductor::~Conductor() {
   // delete the iceservers received from callclient
   if (iceservers_)
     delete iceservers_;
-
-  // delete camera device
-  if (capturer_) {
-    delete capturer_;
-    capturer_ = NULL;
-  }
 }
 
 bool Conductor::connection_active() const {
@@ -90,6 +84,27 @@ bool Conductor::connection_active() const {
 void Conductor::SetCamera(int deviceId, std::string &deviceUniqueName) {
   camera_id_ = deviceId;
   camera_name_ = deviceUniqueName;
+  std::map<std::string, talk_base::scoped_refptr<webrtc::MediaStreamInterface> >::iterator it
+		= active_streams_.find(kStreamLabel);
+
+  if(it == active_streams_.end())	{
+    LOG(LS_ERROR) << "Stream list is empty.";
+    return;
+  }
+
+  talk_base::scoped_refptr<webrtc::MediaStreamInterface> stream = it->second;
+
+  stream->AddRef();
+
+  webrtc::VideoTrackVector tracks = stream->GetVideoTracks();
+  if (!tracks.empty()) {
+    webrtc::VideoTrackInterface* track = tracks[0];
+    cricket::WebRtcVideoCapturer *capturer = (cricket::WebRtcVideoCapturer*)track->GetSource()->GetVideoCapturer();
+    cricket::Device dev(camera_name_, camera_id_);
+    capturer->SwitchCamera(dev, imageOrientation_);
+  }
+
+  stream->Release();
 }
 
 void Conductor::SetImageOrientation(int degrees)
@@ -99,21 +114,20 @@ void Conductor::SetImageOrientation(int degrees)
 
 bool Conductor::SetVideo(bool enable) {
   std::map<std::string, talk_base::scoped_refptr<webrtc::MediaStreamInterface> >::iterator it
-      = active_streams_.find(kStreamLabel);
+    = active_streams_.find(kStreamLabel);
 
-  if(it == active_streams_.end()) {
-      LOG(LS_ERROR) << "Stream list is empty.";
-      return false;
+  if(it == active_streams_.end())  {
+    LOG(LS_ERROR) << "Stream list is empty.";
+    return false;
   }
 
   talk_base::scoped_refptr<webrtc::MediaStreamInterface> stream = it->second;
 
   stream->AddRef();
-
   webrtc::VideoTrackVector tracks = stream->GetVideoTracks();
   if (!tracks.empty()) {
-      webrtc::VideoTrackInterface* track = tracks[0];
-      track->set_enabled(enable);
+    webrtc::VideoTrackInterface* track = tracks[0];
+    track->set_enabled(enable);
   }
 
   stream->Release();
@@ -122,9 +136,9 @@ bool Conductor::SetVideo(bool enable) {
 
 bool Conductor::SetVoice(bool enable) {
   std::map<std::string, talk_base::scoped_refptr<webrtc::MediaStreamInterface> >::iterator it
-      = active_streams_.find(kStreamLabel);
+    = active_streams_.find(kStreamLabel);
 
-  if(it == active_streams_.end()) {
+  if(it == active_streams_.end())  {
     LOG(LS_ERROR) << "Stream list is empty.";
     return false;
   }
@@ -132,7 +146,6 @@ bool Conductor::SetVoice(bool enable) {
   talk_base::scoped_refptr<webrtc::MediaStreamInterface> stream = it->second;
 
   stream->AddRef();
-
   webrtc::AudioTrackVector tracks = stream->GetAudioTracks();
   if (!tracks.empty()) {
     webrtc::AudioTrackInterface* track = tracks[0];
@@ -174,7 +187,7 @@ bool Conductor::InitializePeerConnection(bool video, bool audio) {
                                                                     NULL,
                                                                     this);
   } else {
-    webrtc::JsepInterface::IceServers::const_iterator iter;
+    webrtc::PeerConnectionInterface::IceServers::const_iterator iter;
     for(iter = iceservers_->begin(); iter != iceservers_->end(); iter++) {
       LOG(INFO) << "IceServer: " << iter->uri;
     }
@@ -200,10 +213,6 @@ void Conductor::DeletePeerConnection() {
   client_->StopRemoteRenderer();
   peer_connection_factory_ = NULL;
   peer_name_ = "";
-  if (capturer_) {
-    delete capturer_;
-    capturer_ = NULL;
-  }
 }
 
 //
@@ -294,7 +303,7 @@ void Conductor::OnInitiateMessage(bool video, bool audio)
 }
 
 cricket::VideoCapturer* Conductor::OpenVideoCaptureDevice() {
-  LOG(INFO) << "OpenVideoCaptureDevice";
+  LOG(INFO) << "OpenVideoCaptureDevice, camera_id=" << camera_id_ << ", camera name=" << camera_name_;
   talk_base::scoped_ptr<cricket::DeviceManagerInterface> dev_manager(
       cricket::DeviceManagerFactory::Create());
   if (!dev_manager->Init()) {
@@ -307,7 +316,6 @@ cricket::VideoCapturer* Conductor::OpenVideoCaptureDevice() {
 
   //LOG(LS_INFO) << "Conductor::OpenVideoCaptureDevice() imageOrientation_=" << imageOrientation_;
   capturer->SetCaptureRotation(imageOrientation_);
-  capturer_ = capturer;
   return capturer;
 }
 
@@ -359,10 +367,10 @@ void Conductor::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
     LOG(INFO) << "Conductor::OnSuccess SendAccept";
     kxmpp_thread_->SendAccept(desc->description()->Copy());
     while(!candidate_queue_.empty()) {
-        LOG(INFO) << "Conductor::OnSuccess add queued candidate back";
-        const webrtc::IceCandidateInterface* c = candidate_queue_.back();
-        candidate_queue_.pop_back();
-        AddIceCandidate(c);
+      LOG(INFO) << "Conductor::OnSuccess add queued candidate back";
+      const webrtc::IceCandidateInterface* c = candidate_queue_.back();
+      candidate_queue_.pop_back();
+      AddIceCandidate(c);
     }
   } else {
     LOG(INFO) << "Conductor::OnSuccess SendOffer";
@@ -398,7 +406,7 @@ void Conductor::ReceiveAccept(const cricket::SessionDescription* desc) {
       DummySetSessionDescriptionObserver::Create(), session_description);
 }
 
-void Conductor::UpdateIceServers(const webrtc::JsepInterface::IceServers *iceservers)
+void Conductor::UpdateIceServers(const webrtc::PeerConnectionInterface::IceServers *iceservers)
 {
   if(iceservers_ != NULL)
     delete iceservers_;
@@ -407,6 +415,6 @@ void Conductor::UpdateIceServers(const webrtc::JsepInterface::IceServers *iceser
 }
 
 void Conductor::ClearCandidates() {
-    LOG(INFO) << "Conductor::ClearCandidates";
-    candidate_queue_.clear();
+  LOG(INFO) << "Conductor::ClearCandidates";
+  candidate_queue_.clear();
 }

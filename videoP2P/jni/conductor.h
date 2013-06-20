@@ -73,7 +73,7 @@ class Conductor
   void OnInitiateMessage(bool video, bool audio);
   void AddIceCandidate(const webrtc::IceCandidateInterface* candidate);
   void ReceiveAccept(const cricket::SessionDescription* desc);
-  void UpdateIceServers(const webrtc::JsepInterface::IceServers *iceservers);
+  void UpdateIceServers(const webrtc::PeerConnectionInterface::IceServers *iceservers);
   void ClearCandidates();
 
   void DisconnectFromCurrentPeer();
@@ -118,7 +118,6 @@ class Conductor
   talk_base::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
   talk_base::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
       peer_connection_factory_;
-  cricket::VideoCapturer* capturer_;
   std::string camera_name_;
   int camera_id_;
   int imageOrientation_;
@@ -131,7 +130,7 @@ class Conductor
   std::map<std::string, talk_base::scoped_refptr<webrtc::MediaStreamInterface> >
       active_streams_;
   std::string server_;
-  const webrtc::JsepInterface::IceServers *iceservers_;
+  const webrtc::PeerConnectionInterface::IceServers *iceservers_;
   std::vector<const webrtc::IceCandidateInterface*> candidate_queue_;
 };
 

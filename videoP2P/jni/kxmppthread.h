@@ -36,11 +36,12 @@
 #include "callclient.h"
 #include "talk/p2p/base/sessiondescription.h"
 #include "talk/app/webrtc/jsep.h"
+#include "talk/app/webrtc/peerconnectioninterface.h"
 
 class Conductor;
 
 class KXmppThread:
-    public talk_base::Thread, XmppPumpNotify, talk_base::MessageHandler {
+    public talk_base::Thread, buzz::XmppPumpNotify, talk_base::MessageHandler {
 public:
   KXmppThread();
   ~KXmppThread();
@@ -69,9 +70,9 @@ public:
   std::string GetCaller();
 
   GCallClient* client_;
-  void UpdateIceServers(const webrtc::JsepInterface::IceServers *iceservers);
+  void UpdateIceServers(const webrtc::PeerConnectionInterface::IceServers *iceservers);
 private:
-  XmppPump* pump_;
+  buzz::XmppPump* pump_;
   talk_base::scoped_refptr<Conductor> conductor_;
   static pthread_mutex_t mtx;
   static pthread_cond_t cond;

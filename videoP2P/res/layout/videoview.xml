@@ -55,6 +55,16 @@
             android:layout_marginLeft="10dip"
             android:src="@drawable/voice_on"
             android:onClick="onSetVoice" />  
+
+        <ImageButton
+            android:id="@+id/switchCameraButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dip"
+            android:layout_marginBottom="5dip"
+            android:layout_marginLeft="10dip"
+            android:src="@drawable/switch_cam"
+            android:onClick="onSwitchCamera" />
        
     </LinearLayout>
     	

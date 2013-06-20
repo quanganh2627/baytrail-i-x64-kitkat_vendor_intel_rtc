@@ -50,7 +50,7 @@ import android.widget.Spinner;
 
 public class Settings {
 
-    private final String LOG_TAG = "WebRTCClient-Settings";	
+    private final String LOG_TAG = "WebRTCClient-Settings";
     private final String NONE_SELECTED = "Default";
     private final String GENERAL_SETTINGS_FILE_NAME = "/webrtc.gen.settings";
     private final String EXTENDED_SETTINGS_FILE_NAME = "/webrtc.ext.settings";
@@ -61,11 +61,11 @@ public class Settings {
     };
 
     private double[] Video_FrameRate_List = {
-        30.0, 29.97, 25.0, 24.0, 23.97, 15, 10  
+        30.0, 29.97, 25.0, 24.0, 23.97, 15, 10
     };
 
     private int[][] Video_Aspect_Ratio_List = {
-        {16, 9}, {5, 3}, {16, 10}, {3, 2}, {4, 3} 	
+        {16, 9}, {5, 3}, {16, 10}, {3, 2}, {4, 3}
     };
 
     private String[] Video_Codecs_List = {
@@ -78,12 +78,12 @@ public class Settings {
 
     //Mbps
     private double[] Video_Bitrate_List = {
-        1.5, 3.5, 5, 8, 12, 15 
+        1.5, 3.5, 5, 8, 12, 15
     };
 
     //Kbps
     private double[] Audio_Bitrate_List = {
-        96, 128, 160, 192, 320 
+        96, 128, 160, 192, 320
     };
 
     public class Config_GeneralSettings {
@@ -140,20 +140,20 @@ public class Settings {
         }
     };
 
-    private final String KEY_VIDEO_RESOLUTION_WIDTH_MIN 	= "KeyVideoResolutionWidthMin";
-    private final String KEY_VIDEO_RESOLUTION_HEIGHT_MIN 	= "KeyVideoResolutionHeightMin";
-    private final String KEY_VIDEO_RESOLUTION_WIDTH_MAX 	= "KeyVideoResolutionWidthMax";	
-    private final String KEY_VIDEO_RESOLUTION_HEIGHT_MAX 	= "KeyVideoResolutionHeightMax";
-    private final String KEY_VIDEO_ASPECT_RATIO_NUMER_MIN 	= "KeyVideoAspectRatioNumerMin";
-    private final String KEY_VIDEO_ASPECT_RATIO_DENOM_MIN 	= "KeyVideoAspectRatioDenomMin";
-    private final String KEY_VIDEO_ASPECT_RATIO_NUMER_MAX 	= "KeyVideoAspectRatioNumerMax";
-    private final String KEY_VIDEO_ASPECT_RATIO_DENOM_MAX 	= "KeyVideoAspectRatioDenomMax";
-    private final String KEY_VIDEO_FRAME_RATE_MIN			= "KeyVideoFrameRateMin";
-    private final String KEY_VIDEO_FRAME_RATE_MAX			= "KeyVideoFrameRateMax";
-    private final String KEY_VIDEO_CODEC					= "KeyVideoCodec";
-    private final String KEY_AUDIO_CODEC					= "KeyAudioCodec";
-    private final String KEY_VIDEO_BITRATE					= "KeyVideoBitRate";
-    private final String KEY_AUDIO_BITRATE					= "KeyAudioBitRate";
+    private final String KEY_VIDEO_RESOLUTION_WIDTH_MIN    = "KeyVideoResolutionWidthMin";
+    private final String KEY_VIDEO_RESOLUTION_HEIGHT_MIN   = "KeyVideoResolutionHeightMin";
+    private final String KEY_VIDEO_RESOLUTION_WIDTH_MAX    = "KeyVideoResolutionWidthMax";
+    private final String KEY_VIDEO_RESOLUTION_HEIGHT_MAX   = "KeyVideoResolutionHeightMax";
+    private final String KEY_VIDEO_ASPECT_RATIO_NUMER_MIN  = "KeyVideoAspectRatioNumerMin";
+    private final String KEY_VIDEO_ASPECT_RATIO_DENOM_MIN  = "KeyVideoAspectRatioDenomMin";
+    private final String KEY_VIDEO_ASPECT_RATIO_NUMER_MAX  = "KeyVideoAspectRatioNumerMax";
+    private final String KEY_VIDEO_ASPECT_RATIO_DENOM_MAX  = "KeyVideoAspectRatioDenomMax";
+    private final String KEY_VIDEO_FRAME_RATE_MIN          = "KeyVideoFrameRateMin";
+    private final String KEY_VIDEO_FRAME_RATE_MAX          = "KeyVideoFrameRateMax";
+    private final String KEY_VIDEO_CODEC                   = "KeyVideoCodec";
+    private final String KEY_AUDIO_CODEC                   = "KeyAudioCodec";
+    private final String KEY_VIDEO_BITRATE                 = "KeyVideoBitRate";
+    private final String KEY_AUDIO_BITRATE                 = "KeyAudioBitRate";
 
     private VideoClient m_client = null;
     private View m_view = null;
@@ -268,7 +268,7 @@ public class Settings {
             }
             m_popWindow.dismiss();
         }
-    }    
+    }
 
     private void LoadSettings() {
         Properties gs_prop = new Properties();
@@ -281,13 +281,30 @@ public class Settings {
         int loopcnt;
 
         try {
-            gs_prop.load(new FileInputStream( Environment.getExternalStorageDirectory().getPath() + GENERAL_SETTINGS_FILE_NAME ));
+            FileInputStream fis1 = null;
+            try {
+              fis1 = new FileInputStream( Environment.getExternalStorageDirectory().getPath() + GENERAL_SETTINGS_FILE_NAME );
+              gs_prop.load(fis1);
+            } catch (java.io.IOException ioe) {
+                Log.e( LOG_TAG, "I/O error" );
+                ioe.printStackTrace();
+            } finally {
+                if (fis1 != null) {
+                  try {
+                    fis1.close();
+                    fis1 = null;
+                  } catch (java.io.IOException ioe) {
+                      Log.e( LOG_TAG, "I/O error" );
+                      ioe.printStackTrace();
+                  }
+              }
+            }
 
             try {
                 if( ((str_temp1 = gs_prop.getProperty( KEY_VIDEO_RESOLUTION_WIDTH_MIN )) != null)
                         && ((str_temp2 = gs_prop.getProperty( KEY_VIDEO_RESOLUTION_HEIGHT_MIN )) != null) ) {
 
-                    ntemp1 = Integer.parseInt( str_temp1 );    				
+                    ntemp1 = Integer.parseInt( str_temp1 );
                     ntemp2 = Integer.parseInt( str_temp2 );
 
                     for( loopcnt = 0; loopcnt < Video_Resolutions_List.length; loopcnt++) {
@@ -314,7 +331,7 @@ public class Settings {
                 if( ((str_temp1 = gs_prop.getProperty( KEY_VIDEO_RESOLUTION_WIDTH_MAX )) != null)
                         && ((str_temp2 = gs_prop.getProperty( KEY_VIDEO_RESOLUTION_HEIGHT_MAX )) != null) ) {
 
-                    ntemp1 = Integer.parseInt( str_temp1 );    				
+                    ntemp1 = Integer.parseInt( str_temp1 );
                     ntemp2 = Integer.parseInt( str_temp2 );
 
                     for( loopcnt = 0; loopcnt < Video_Resolutions_List.length; loopcnt++) {
@@ -452,7 +469,25 @@ public class Settings {
             Config_ExtendedSettings es_new = new Config_ExtendedSettings();
 
             try {
-                es_prop.load(new FileInputStream( Environment.getExternalStorageDirectory().getPath() + EXTENDED_SETTINGS_FILE_NAME ));
+                FileInputStream fis = null;
+                try {
+                  fis = new FileInputStream( Environment.getExternalStorageDirectory().getPath() + EXTENDED_SETTINGS_FILE_NAME );
+                  es_prop.load(fis);
+                  fis.close();
+                } catch (java.io.IOException ioe) {
+                  Log.e( LOG_TAG, "I/O error" );
+                  ioe.printStackTrace();
+                } finally {
+                  if (fis != null) {
+                    try {
+                      fis.close();
+                      fis = null;
+                  } catch (java.io.IOException ioe) {
+                      Log.e( LOG_TAG, "I/O error" );
+                      ioe.printStackTrace();
+                  }
+                }
+             }
 
                 try {
                     if( (str_temp1 = es_prop.getProperty( KEY_VIDEO_CODEC )) != null ) {
@@ -562,26 +597,26 @@ public class Settings {
             gs_new.videoResWidthMin = Video_Resolutions_List[m_idxVideoResolutionMin][0];
             gs_new.videoResHeightMin = Video_Resolutions_List[m_idxVideoResolutionMin][1];
             gs_prop.setProperty( KEY_VIDEO_RESOLUTION_WIDTH_MIN, Integer.toString( gs_new.videoResWidthMin ) );
-            gs_prop.setProperty( KEY_VIDEO_RESOLUTION_HEIGHT_MIN, Integer.toString( gs_new.videoResHeightMin ) );	
+            gs_prop.setProperty( KEY_VIDEO_RESOLUTION_HEIGHT_MIN, Integer.toString( gs_new.videoResHeightMin ) );
         }
 
         if( m_idxVideoResolutionMax !=  Video_Resolutions_List.length ) {
             gs_new.videoResWidthMax = Video_Resolutions_List[m_idxVideoResolutionMax][0];
-            gs_new.videoResHeightMax = Video_Resolutions_List[m_idxVideoResolutionMax][1];    		
+            gs_new.videoResHeightMax = Video_Resolutions_List[m_idxVideoResolutionMax][1];
             gs_prop.setProperty( KEY_VIDEO_RESOLUTION_WIDTH_MAX, Integer.toString( gs_new.videoResWidthMax ) );
             gs_prop.setProperty( KEY_VIDEO_RESOLUTION_HEIGHT_MAX, Integer.toString( gs_new.videoResHeightMax ) );
         }
 
         if( m_idxVideoAspectRatioMin !=  Video_Aspect_Ratio_List.length ) {
             gs_new.videoAspectRatioNumerMin = Video_Aspect_Ratio_List[m_idxVideoAspectRatioMin][0];
-            gs_new.videoAspectRatioDenomMin = Video_Aspect_Ratio_List[m_idxVideoAspectRatioMin][1];        		
+            gs_new.videoAspectRatioDenomMin = Video_Aspect_Ratio_List[m_idxVideoAspectRatioMin][1];
             gs_prop.setProperty( KEY_VIDEO_ASPECT_RATIO_NUMER_MIN, Integer.toString( gs_new.videoAspectRatioNumerMin ) );
             gs_prop.setProperty( KEY_VIDEO_ASPECT_RATIO_DENOM_MIN, Integer.toString( gs_new.videoAspectRatioDenomMin ) );
-        } 
+        }
 
         if( m_idxVideoAspectRatioMax !=  Video_Aspect_Ratio_List.length ) {
             gs_new.videoAspectRatioNumerMax = Video_Aspect_Ratio_List[m_idxVideoAspectRatioMax][0];
-            gs_new.videoAspectRatioDenomMax = Video_Aspect_Ratio_List[m_idxVideoAspectRatioMax][1];          		
+            gs_new.videoAspectRatioDenomMax = Video_Aspect_Ratio_List[m_idxVideoAspectRatioMax][1];
             gs_prop.setProperty( KEY_VIDEO_ASPECT_RATIO_NUMER_MAX, Integer.toString( gs_new.videoAspectRatioNumerMax ) );
             gs_prop.setProperty( KEY_VIDEO_ASPECT_RATIO_DENOM_MAX, Integer.toString( gs_new.videoAspectRatioDenomMax ) );
         }
@@ -594,14 +629,29 @@ public class Settings {
         if( m_idxVideoFrameRateMax !=  Video_FrameRate_List.length ) {
             gs_new.videoFrameRateMax = Video_FrameRate_List[m_idxVideoFrameRateMax];
             gs_prop.setProperty( KEY_VIDEO_FRAME_RATE_MAX, Double.toString( gs_new.videoFrameRateMax ) );
-        } 
+        }
 
+        FileOutputStream fos = null;
         try {
-            gs_prop.store(new FileOutputStream( Environment.getExternalStorageDirectory().getPath() + GENERAL_SETTINGS_FILE_NAME ), null); 
+            fos = new FileOutputStream( Environment.getExternalStorageDirectory().getPath() + GENERAL_SETTINGS_FILE_NAME );
+            gs_prop.store(fos, null);
             configGS = gs_new;
+        } catch (java.io.IOException ioe) {
+            Log.e( LOG_TAG, "I/O error: unable to save general settings into file" );
+            ioe.printStackTrace();
         } catch (Exception ex) {
             Log.e( LOG_TAG, "Unable to store general settings into file" );
             ex.printStackTrace();
+        } finally {
+            if (fos != null) {
+              try {
+              fos.close();
+              fos = null;
+              } catch (java.io.IOException ioe) {
+                  Log.e( LOG_TAG, "I/O error: unable to save general settings into file" );
+                  ioe.printStackTrace();
+                }
+            }
         }
 
         if( m_testMode ) {
@@ -628,12 +678,27 @@ public class Settings {
                 es_prop.setProperty( KEY_AUDIO_BITRATE, Double.toString( es_new.audioBitRate ) );
             }
 
+            FileOutputStream fos2 = null;
             try {
-                es_prop.store(new FileOutputStream( Environment.getExternalStorageDirectory().getPath() + EXTENDED_SETTINGS_FILE_NAME ), null);
+                fos2 = new FileOutputStream( Environment.getExternalStorageDirectory().getPath() + EXTENDED_SETTINGS_FILE_NAME );
+                es_prop.store(fos2, null);
                 configES = es_new;
+            } catch (java.io.IOException ioe) {
+                Log.e( LOG_TAG, "I/O error: unable to save general settings into file" );
+                ioe.printStackTrace();
             } catch (Exception ex) {
                 Log.e( LOG_TAG, "Unable to store extended settings into file" );
                 ex.printStackTrace();
+            } finally {
+                if (fos2 != null) {
+                  try {
+                  fos2.close();
+                  fos2 = null;
+                  } catch (java.io.IOException ioe) {
+                      Log.e( LOG_TAG, "I/O error: unable to save general settings into file" );
+                      ioe.printStackTrace();
+                    }
+                }
             }
         }
 
@@ -658,7 +723,7 @@ public class Settings {
 
         str_videoRes[Video_Resolutions_List.length] = new String(NONE_SELECTED);
         for(int i=0; i<Video_Resolutions_List.length; i++) {
-            str_videoRes[i] = new String( Integer.toString(Video_Resolutions_List[i][0]) 
+            str_videoRes[i] = new String( Integer.toString(Video_Resolutions_List[i][0])
                     + "x" + Integer.toString(Video_Resolutions_List[i][1]) );
         }
 
@@ -680,7 +745,7 @@ public class Settings {
                 });
 
         ArrayAdapter<String> max_adapter = new ArrayAdapter<String>(m_client, android.R.layout.simple_spinner_item,	str_videoRes);
-        max_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);		
+        max_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         m_spnVideoResolutionMax = (Spinner) m_view.findViewById(R.id.SP_VideoResolutionMax);
         m_spnVideoResolutionMax.setAdapter(max_adapter);
         m_spnVideoResolutionMax.setOnItemSelectedListener(new Spinner.OnItemSelectedListener() {
@@ -723,7 +788,7 @@ public class Settings {
                 });
 
         ArrayAdapter<String> max_adapter = new ArrayAdapter<String>(m_client, android.R.layout.simple_spinner_item,	str_videofps);
-        max_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);		
+        max_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         m_spnVideoFrameRateMax = (Spinner) m_view.findViewById(R.id.SP_VideoFrameRateMax);
         m_spnVideoFrameRateMax.setAdapter(max_adapter);
         m_spnVideoFrameRateMax.setOnItemSelectedListener(new Spinner.OnItemSelectedListener() {
@@ -747,7 +812,7 @@ public class Settings {
         for(int i=0; i<Video_Aspect_Ratio_List.length; i++) {
             double ar = Math.floor( ( (double)Video_Aspect_Ratio_List[i][0] / Video_Aspect_Ratio_List[i][1] ) * 100 ) / 100;
 
-            str_videoAr[i] = new String( Integer.toString(Video_Aspect_Ratio_List[i][0]) 
+            str_videoAr[i] = new String( Integer.toString(Video_Aspect_Ratio_List[i][0])
                     + ":" + Integer.toString(Video_Aspect_Ratio_List[i][1]) + " (" + Double.toString(ar) + ":1" + ")"  );
         }
 
@@ -769,7 +834,7 @@ public class Settings {
                 });
 
         ArrayAdapter<String> max_adapter = new ArrayAdapter<String>(m_client, android.R.layout.simple_spinner_item,	str_videoAr);
-        max_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);		
+        max_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         m_spnVideoAspectRatioMax = (Spinner) m_view.findViewById(R.id.SP_VideoAspectRatioMax);
         m_spnVideoAspectRatioMax.setAdapter(max_adapter);
         m_spnVideoAspectRatioMax.setOnItemSelectedListener(new Spinner.OnItemSelectedListener() {
@@ -802,7 +867,7 @@ public class Settings {
                 @Override
                 public void onItemSelected(AdapterView<?> parent,
                     View view, int position, long id) {
-                m_idxVideoCodec = position;   			
+                m_idxVideoCodec = position;
                 }
 
                 @Override
@@ -862,7 +927,7 @@ public class Settings {
                 Log.e(LOG_TAG, "None selected: Not possible!");
                 }
                 });
-    }	
+    }
 
     private void SetSpinner_AudioBitRate() {
         String[] str_audioBr = new String[Audio_Bitrate_List.length + 1];

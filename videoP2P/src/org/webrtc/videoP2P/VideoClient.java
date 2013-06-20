@@ -94,7 +94,7 @@ import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.view.animation.RotateAnimation;
 
-public class VideoClient extends Activity {
+public class VideoClient extends Activity implements SurfaceHolder.Callback {
     private static boolean USE_VIDEO_ENGINE = false;
 
 
@@ -223,6 +223,26 @@ public class VideoClient extends Activity {
 
     private AudioJackReceiver audioJackReceiver;
 
+    class CallOptions {
+        public CallOptions(String callee, boolean hasVideo, boolean hasAudio) {
+            mCallee = callee;
+            mHasAudio = hasAudio;
+            mHasVideo = hasVideo;
+        }
+
+        public void Reset(){
+            mCallee = "";
+            mHasAudio = false;
+            mHasVideo = false;
+        }
+
+        public String mCallee = null;
+        boolean mHasVideo = false;
+        boolean mHasAudio = false;
+    }
+
+    private CallOptions callOptions = null;
+
     enum CallLayout {
         MAIN,
         CONTACT,
@@ -269,15 +289,26 @@ public class VideoClient extends Activity {
         // Load the user credential configs from confFile
         // Warning: For real credentials, use encrypted storage
         // This is for development convenience
+        BufferedReader reader = null;
         try {
             File conf = new File(confFile);
-            BufferedReader reader = new BufferedReader(new FileReader(conf));
+            reader = new BufferedReader(new FileReader(conf));
 
             String toUser = reader.readLine();
             myUser = reader.readLine();
             myPass = reader.readLine();
             myDomain = reader.readLine();
         } catch (IOException e) {
+            Log.e("*Webrtc*", "I/O error");
+        } finally {
+            if (reader != null) {
+              try {
+                reader.close();
+                reader = null;
+              } catch (IOException ioe) {
+                Log.e("*Webrtc*", "I/O error");
+              }
+            }
         }
 
         if(myDomain == null || myDomain.length() == 0) {
@@ -305,33 +336,32 @@ public class VideoClient extends Activity {
             };
         orientationListener.enable ();
 
-        if (useVideoEngine) {
-            //StartVideoEngine();
-        } else {
-            localSurfaceView = ViERenderer.CreateLocalRenderer(this);
-            Log.v(LOG_TAG, "Create Local Render");
-            if (localSurfaceView == null) {
-                Log.e(LOG_TAG, "[StartMain]: Failed to create local surface view");
-            }
-
-            // TODO: (khanh) add flag for switching between NativeWindow and SW Rendering
-            if(useOpenGLRender) {
-                Log.v(LOG_TAG, "Create Remote OpenGL Render");
-                //					remoteSurfaceView = ViERenderer.CreateRenderer(this, true);
-                remoteSurfaceView = new PeerGLSurfaceView(this);
-            } else {
-                Log.v(LOG_TAG, "Create Remote SurfaceView Render");
-                remoteSurfaceView = ViERenderer.CreateRenderer(this, false);
-            }
-            try {
-                SetRemoteSurfaceView(remoteSurfaceView);
-                SetRemoteSurface(remoteSurfaceView.getHolder().getSurface());
-            } catch (Exception e) {
-                Log.d(LOG_TAG, "SetRemoteSurface ***[Exception]***");
-                Log.d(e.toString(), "***");
-            }
-
+        localSurfaceView = ViERenderer.CreateLocalRenderer(this);
+        Log.v(LOG_TAG, "Create Local Render");
+        if (localSurfaceView == null) {
+            Log.e(LOG_TAG, "[StartMain]: Failed to create local surface view");
         }
+        else {
+            localSurfaceView.getHolder().addCallback(this);
+        }
+
+        // TODO: (khanh) add flag for switching between NativeWindow and SW Rendering
+        if(useOpenGLRender) {
+            Log.v(LOG_TAG, "Create Remote OpenGL Render");
+            //remoteSurfaceView = ViERenderer.CreateRenderer(this, true);
+            remoteSurfaceView = new PeerGLSurfaceView(this);
+        } else {
+            Log.v(LOG_TAG, "Create Remote SurfaceView Render");
+            remoteSurfaceView = ViERenderer.CreateRenderer(this, false);
+        }
+        try {
+            SetRemoteSurfaceView(remoteSurfaceView);
+            SetRemoteSurface(remoteSurfaceView.getHolder().getSurface());
+        } catch (Exception e) {
+            Log.d(LOG_TAG, "SetRemoteSurface ***[Exception]***");
+            Log.d(e.toString(), "***");
+        }
+
         switchLayoutTo(CallLayout.MAIN);
     }
 
@@ -346,6 +376,15 @@ public class VideoClient extends Activity {
         public void onPause() {
             unregisterReceiver(audioJackReceiver);
             super.onPause();
+        }
+
+    @Override
+        public void onStop() {
+            if (currentLayout == CallLayout.INCALL) {
+              _instance.onHangup(null);
+              switchLayoutTo(CallLayout.MAIN);
+            }
+            super.onStop();
         }
 
     public void sendLogin(View v) {
@@ -380,10 +419,13 @@ public class VideoClient extends Activity {
         else if(layout==CallLayout.CONTACT) {
             // Need to set orientation after Login as Login
             // creates the thread and Conductor object.
-            SelectCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
             setContactLayout();
         }
-        else if(layout==CallLayout.INCALL) StartSurface();
+        else if(layout==CallLayout.INCALL) {
+            usingFrontCamera = true;
+            SelectCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
+            StartSurface();
+        }
     }
 
     private void SelectCamera(int requestFacing) {
@@ -405,8 +447,8 @@ public class VideoClient extends Activity {
         else if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
             cameraUniqueName = "Camera " + cameraId + ", Facing back, Orientation "+info.orientation;
         }
-        SetCamera(cameraId, cameraUniqueName);
         SetImageOrientation(info.orientation);
+        SetCamera(cameraId, cameraUniqueName);
     }
     private void setMainLayout() {
         setContentView(R.layout.mainview);
@@ -461,11 +503,13 @@ public class VideoClient extends Activity {
         callButton.setOnClickListener( new View.OnClickListener() {
                 @Override
                 public void onClick(View arg0) {
-                String callee = contactList.getSelection();
-                if(TextUtils.isEmpty(callee)) return;
-                PlaceCall(callee, true, true);
+                    String callee = contactList.getSelection();
+                    if(TextUtils.isEmpty(callee)) return;
+
+                    callOptions = new CallOptions(callee, true, true);
+                    switchLayoutTo(CallLayout.INCALL); // call is placed when surface is created
                 }
-                });
+        });
 
         Button videoonly_callButton = (Button) findViewById(R.id.callbutton_videoonly); 
         videoonly_callButton.setOnClickListener( new View.OnClickListener() {
@@ -473,7 +517,8 @@ public class VideoClient extends Activity {
                 public void onClick(View arg0) {
                 String callee = contactList.getSelection();
                 if(TextUtils.isEmpty(callee)) return;
-                PlaceCall(callee, true, false);
+                    callOptions = new CallOptions(callee, true, false);
+                    switchLayoutTo(CallLayout.INCALL); // call is placed when surface is created
                 }
                 });
 
@@ -483,7 +528,8 @@ public class VideoClient extends Activity {
                 public void onClick(View arg0) {
                 String callee = contactList.getSelection();
                 if(TextUtils.isEmpty(callee)) return;
-                PlaceCall(callee, false, true);
+                    callOptions = new CallOptions(callee, false, true);
+                    switchLayoutTo(CallLayout.INCALL); // call is placed when surface is created
                 }
                 });    		
     }
@@ -507,14 +553,16 @@ public class VideoClient extends Activity {
         if (localSurfaceLayout == null) {
             Log.e(LOG_TAG, "[StartMain]: Failed to create local surface layout");
         }
-        localSurfaceLayout.removeAllViews();
-        if (localSurfaceLayout != null) {
-            Log.d(LOG_TAG, "[StartMain]: LocalSurfaceView added to Layout");
-            try {
-                localSurfaceLayout.addView(localSurfaceView);
-            } catch (Exception e) {
-                Log.d(LOG_TAG, "***[Exception]***");
-                Log.d(e.toString(), "***");
+        else {
+            localSurfaceLayout.removeAllViews();
+            if (localSurfaceLayout != null) {
+                Log.d(LOG_TAG, "[StartMain]: LocalSurfaceView added to Layout");
+                try {
+                    localSurfaceLayout.addView(localSurfaceView);
+                } catch (Exception e) {
+                    Log.d(LOG_TAG, "***[Exception]***");
+                    Log.d(e.toString(), "***");
+                }
             }
         }
 
@@ -523,15 +571,16 @@ public class VideoClient extends Activity {
             if (remoteSurfaceLayout == null) {
                 Log.e(LOG_TAG, "[StartMain]: Failed to create remote surface layout");
             }
-
-            remoteSurfaceLayout.removeAllViews();
-            if (remoteSurfaceLayout != null) {
-                Log.d(LOG_TAG, "[StartMain]: RemoteSurfaceView added to Layout");
-                try {
-                    remoteSurfaceLayout.addView(remoteSurfaceView);
-                } catch (Exception e) {
-                    Log.d(LOG_TAG, "***[Exception]***");
-                    Log.d(e.toString(), "***");
+            else {
+                remoteSurfaceLayout.removeAllViews();
+                if (remoteSurfaceLayout != null) {
+                    Log.d(LOG_TAG, "[StartMain]: RemoteSurfaceView added to Layout");
+                    try {
+                        remoteSurfaceLayout.addView(remoteSurfaceView);
+                    } catch (Exception e) {
+                        Log.d(LOG_TAG, "***[Exception]***");
+                        Log.d(e.toString(), "***");
+                    }
                 }
             }
         }
@@ -595,7 +644,7 @@ public class VideoClient extends Activity {
         }
         });
         }
-        */		
+        */
     private native static boolean NativeInit();
     private native int Login(String user_name, String password, String domain, String server, boolean UseSSL);
     private native int PlaceCall(String user_name, boolean video, boolean audio);
@@ -607,6 +656,11 @@ public class VideoClient extends Activity {
     private native boolean SetVoice(boolean enable);
     private native String GetCaller();
     private native boolean IsTestModeActive();
+
+    private void RejectAndSwitchView() {
+        switchLayoutTo(CallLayout.CONTACT);
+        RejectCall();
+    }
 
     public static void callBackXMPPError(String code) { 
         short shortCode = new Short(code);
@@ -663,10 +717,10 @@ public class VideoClient extends Activity {
                 callDialog.dismiss();
                 break;
             case VideoClient.CALL_REJECTED:
+                _instance.switchLayoutTo(CallLayout.CONTACT);
                 callDialog.setMessage("Call Rejected.");
                 break;
             case VideoClient.CALL_INPROGRESS:
-                switchLayoutTo(CallLayout.INCALL);
                 break;
             case VideoClient.CALL_RECIVEDTERMINATE:
                 if(mInComingDialog!=null && mInComingDialog.isShowing()) {
@@ -685,6 +739,7 @@ public class VideoClient extends Activity {
                 }
                 else {
                     Log.d(LOG_TAG, "Incoming call from " + _instance.GetCaller());
+                    switchLayoutTo(CallLayout.INCALL);
                     handleIncomingCall();
                 }
                 break;
@@ -716,7 +771,7 @@ public class VideoClient extends Activity {
                 .setMessage("Accept call?")
                 .setIcon(android.R.drawable.ic_dialog_alert)
                 .setPositiveButton("Accept", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {			      	
+                        public void onClick(DialogInterface dialog, int which) {
                         // Accept button clicked
                         Log.d(LOG_TAG, "Accepting incoming call from " + _instance.GetCaller());
                         _instance.AcceptCall(true, true);
@@ -724,16 +779,16 @@ public class VideoClient extends Activity {
                         }
                         })
             .setNegativeButton("Reject", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {			      	
+                    public void onClick(DialogInterface dialog, int which) {
                     // Reject button clicked
                     Log.d(LOG_TAG, "Rejecting incoming call from " + _instance.GetCaller());
-                    _instance.RejectCall();
+                    _instance.RejectAndSwitchView();
                     mInComingDialog = null;
                     }
                     })
             .show(); 
         } else {
-            CharSequence[] accept_choices = {"Accept", "Accept - Video only", "Accept - Audio only", "Reject"};					
+            CharSequence[] accept_choices = {"Accept", "Accept - Video only", "Accept - Audio only", "Reject"};
             AlertDialog.Builder builder = new AlertDialog.Builder(_instance);
             mInComingDialog = builder
                 .setTitle("Incoming call")
@@ -758,7 +813,7 @@ public class VideoClient extends Activity {
                         case 3:
                         // Reject button clicked
                         Log.d(LOG_TAG, "Rejecting incoming call from " + _instance.GetCaller());
-                        _instance.RejectCall();
+                        _instance.RejectAndSwitchView();
                         break;
                         }
 
@@ -767,8 +822,8 @@ public class VideoClient extends Activity {
                 })
             .show();
         }
-    }		  
-    public static void callBackXMPPEngineState(String code) { 
+    }
+    public static void callBackXMPPEngineState(String code) {
         short shortCode = new Short(code);
         switch(shortCode){
             case VideoClient.XMPPENGINE_CLOSED:
@@ -850,6 +905,32 @@ public class VideoClient extends Activity {
         }
     }
 
+    public void onSwitchCamera(View v) {
+        usingFrontCamera = !usingFrontCamera;
+        SelectCamera(usingFrontCamera ? Camera.CameraInfo.CAMERA_FACING_FRONT
+                : Camera.CameraInfo.CAMERA_FACING_BACK);
+    }
+
+    // SurfaceHolder.Callbacks
+    public void surfaceChanged(SurfaceHolder holder,
+            int format, int width, int height) {
+        Log.d(LOG_TAG, "surfaceChanged");
+    }
+
+    public void surfaceCreated(SurfaceHolder holder) {
+        Log.d(LOG_TAG, "surfaceCreated");
+        if (callOptions != null){
+            Log.d(LOG_TAG, "PlaceCall to " + callOptions.mCallee);
+            PlaceCall(callOptions.mCallee, callOptions.mHasVideo, callOptions.mHasAudio);
+            callOptions = null;
+        }
+    }
+
+    public void surfaceDestroyed(SurfaceHolder holder) {
+        Log.d(LOG_TAG, "surfaceDestroyed");
+        //isSurfaceReady = false;
+    }
+
     private int getQuadrant(int orientation) {
         int quadrant=0;
         if (orientation <= 45 || orientation > 315)
@@ -868,6 +949,7 @@ public class VideoClient extends Activity {
         final ImageButton hangup = (ImageButton)findViewById(R.id.hangupButton);
         final ImageButton videoSet = (ImageButton)findViewById(R.id.videoSetButton);
         final ImageButton voiceSet = (ImageButton)findViewById(R.id.voiceSetButton);
+        final ImageButton switchCamera = (ImageButton)findViewById(R.id.switchCameraButton);
 
         boolean bClockwise = false;
         float fromDegree=0.0f, toDegree=90.0f;
@@ -934,6 +1016,7 @@ public class VideoClient extends Activity {
         hangup.setAnimation(rAnim);
         voiceSet.setAnimation(rAnim);
         videoSet.setAnimation(rAnim);
+        switchCamera.setAnimation(rAnim);
         rAnim.setAnimationListener(new AnimationListener() {
                 public void onAnimationStart(Animation anim) {
                 }
@@ -945,6 +1028,7 @@ public class VideoClient extends Activity {
                 hangup.setImageResource(R.drawable.hangup);
                 voiceSet.setImageResource( m_voiceSetOn ? R.drawable.voice_on : R.drawable.voice_off );
                 videoSet.setImageResource( m_videoSetOn ? R.drawable.video_on : R.drawable.video_off );
+                switchCamera.setImageResource(R.drawable.switch_cam);
                 }
                 });
         hangup.startAnimation(rAnim);
@@ -984,12 +1068,12 @@ public class VideoClient extends Activity {
         }
 
     static {
-        //			    System.loadLibrary("stlport_shared");
-        //			    System.loadLibrary("crypto_jingle");
-        //			    System.loadLibrary("webrtc_audio_preprocessing");
-        //			    System.loadLibrary("webrtc_voice");
-        //			    System.loadLibrary("jingle");
-        //			    System.loadLibrary("webrtc_video");
+        //System.loadLibrary("stlport_shared");
+        //System.loadLibrary("crypto_jingle");
+        //System.loadLibrary("webrtc_audio_preprocessing");
+        //System.loadLibrary("webrtc_voice");
+        //System.loadLibrary("jingle");
+        //System.loadLibrary("webrtc_video");
         System.load("/system/lib/videoP2P/libwebrtc-video-p2p-jni.so");
 
         if (!NativeInit()) {

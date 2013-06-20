@@ -107,9 +107,9 @@ struct CandidateData: public talk_base::MessageData {
 };
 
 struct IceServerData: public talk_base::MessageData {
-  IceServerData(const webrtc::JsepInterface::IceServers *iceservers)
+  IceServerData(const webrtc::PeerConnectionInterface::IceServers *iceservers)
       : iceservers_(iceservers) { }
-  const webrtc::JsepInterface::IceServers *iceservers_;
+  const webrtc::PeerConnectionInterface::IceServers *iceservers_;
 };
 
 } // namespace
@@ -180,14 +180,16 @@ public:
         if (len > 0) {
             time_t tim = time(NULL);
             struct tm * now = localtime(&tim);
-            char *time_string = asctime(now);
-            if (time_string) {
-                size_t time_len = strlen(time_string);
-                if (time_len > 0) {
-                    time_string[time_len-1] = 0;    // trim off terminating \n
+            if (now) {
+                char *time_string = asctime(now);
+                if (time_string) {
+                    size_t time_len = strlen(time_string);
+                    if (time_len > 0) {
+                        time_string[time_len-1] = 0;    // trim off terminating \n
+                    }
+                    LOG(INFO) << (output ? "SEND >>>>>>>>>>>>>>>>" : "RECV <<<<<<<<<<<<<<<<") << " : " << time_string;
                 }
             }
-            LOG(INFO) << (output ? "SEND >>>>>>>>>>>>>>>>" : "RECV <<<<<<<<<<<<<<<<") << " : " << time_string;
             
             bool indent;
             int start = 0, nest = 3;
@@ -249,7 +251,7 @@ KXmppThread::KXmppThread() {
 void KXmppThread::Init() {
   LOG(INFO) << "KXmppThread::Init()";
   terminated = false;
-  pump_ = new XmppPump(this);
+  pump_ = new buzz::XmppPump(this);
   //Call Client
   std::string caps_node = "http://www.google.com/xmpp/client/caps";
   std::string caps_ver = "1.0";
@@ -387,7 +389,7 @@ std::string KXmppThread::GetCaller() {
   return toReturn;
 }
 
-void KXmppThread::UpdateIceServers(const webrtc::JsepInterface::IceServers *iceservers)
+void KXmppThread::UpdateIceServers(const webrtc::PeerConnectionInterface::IceServers *iceservers)
 {
   LOG(INFO) << "KXmppThread::UpdateIceServers()";
   Post(this, MSG_UPDATE_ICE, new IceServerData(iceservers));
@@ -400,7 +402,7 @@ void KXmppThread::OnMessage(talk_base::Message* pmsg) {
   if (pmsg->message_id == MSG_LOGIN) {
     ASSERT(pmsg->pdata != NULL);
     LoginData* data = reinterpret_cast<LoginData*>(pmsg->pdata);
-    pump_->DoLogin(data->xcs, new XmppSocket(data->xcs.use_tls()), NULL);
+    pump_->DoLogin(data->xcs, new buzz::XmppSocket(data->xcs.use_tls()), NULL);
     delete data;
   } else if (pmsg->message_id == MSG_DISCONNECT) {
     pump_->DoDisconnect();

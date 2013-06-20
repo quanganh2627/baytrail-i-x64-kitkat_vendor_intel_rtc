@@ -221,21 +221,21 @@ Java_org_webrtc_videoP2P_VideoClient_PlaceCall(
         JNIEnv * env,
         jobject, jstring user, jboolean video, jboolean audio)
 {
-  LOGI("PlaceCall video=%d, audio=%d", video, audio);
-  int status;
-  bool isAttached = false;
+    LOGI("PlaceCall video=%d, audio=%d", video, audio);
+    int status;
+    bool isAttached = false;
 
-  status = gJavaVM->GetEnv((void **) &env, JNI_VERSION_1_4);
-  if(status < 0) {
-    LOGI("callback_handler_ext: failed to get JNI environment, assuming native thread");
-    status = gJavaVM->AttachCurrentThread(&env, NULL);
+    status = gJavaVM->GetEnv((void **) &env, JNI_VERSION_1_4);
     if(status < 0) {
-      LOGE("ashoka: place call: failed to attach "
-      "current thread");
-      return -1;
+      LOGI("callback_handler_ext: failed to get JNI environment, assuming native thread");
+      status = gJavaVM->AttachCurrentThread(&env, NULL);
+      if(status < 0) {
+        LOGE("ashoka: place call: failed to attach "
+        "current thread");
+        return -1;
+      }
+      isAttached = true;
     }
-    isAttached = true;
-  }
 
   const char* userNative = env->GetStringUTFChars(user, NULL);
   if(userNative && xmpp_thread_){
