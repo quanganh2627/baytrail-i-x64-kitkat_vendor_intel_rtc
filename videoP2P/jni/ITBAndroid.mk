@@ -76,8 +76,8 @@ LOCAL_CFLAGS := \
 
 # webrtc-unstable/third_party/webrtc/video_engine/test/videoP2P/jni
 LOCAL_C_INCLUDES := \
-    external/gtest/include \
-    external/stlport/stlport \
+    $(call include-path-for, gtest) \
+    $(call include-path-for, stlport) \
     bionic \
     $(WEBRTC_SRC_PATH) \
     $(WEBRTC_SRC_PATH)/voice_engine/include \

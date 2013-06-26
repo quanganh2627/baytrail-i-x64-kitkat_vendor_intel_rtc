@@ -387,7 +387,7 @@ LOCAL_CFLAGS := \
 
 LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH) \
-    external/gtest/include \
+    $(call include-path-for, gtest) \
     $(LOCAL_PATH)/../../../.. \
     $(LOCAL_PATH)/../../../../.. \
     $(LOCAL_PATH)/../../../../../.. \
