@@ -46,6 +46,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
+import android.content.DialogInterface.OnDismissListener;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.SensorManager;
@@ -130,6 +131,8 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
     final static short XMPPERROR_UNKNOWN = 11;
 
     final int MAX_CALLEE = 1;
+    final int DIALING_TIMEOUT_MS = 10*1000;
+    final int RINGING_TIMEOUT_MS = 15*1000;
 
     private Settings m_Settings;
     private boolean m_videoSetOn = true;
@@ -166,7 +169,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
     private ListView contactListView;
     private static PeerArrayAdapter listAdapter;
     // TODO: (khanh) Add flag to switch between user and native window
-    //		private PeerGLSurfaceView remoteSurfaceView = null;
+    //       private PeerGLSurfaceView remoteSurfaceView = null;
     private SurfaceView remoteSurfaceView = null;
     private LinearLayout mLlRemoteSurface = null;
     private LinearLayout mLlLocalSurface = null;
@@ -374,18 +377,19 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
 
     @Override
         public void onPause() {
+            if (currentLayout == CallLayout.INCALL) {
+                _instance.HangUp();
+                switchLayoutTo(CallLayout.MAIN);
+            }
+
             unregisterReceiver(audioJackReceiver);
             super.onPause();
         }
 
     @Override
-        public void onStop() {
-            if (currentLayout == CallLayout.INCALL) {
-              _instance.onHangup(null);
-              switchLayoutTo(CallLayout.MAIN);
-            }
-            super.onStop();
-        }
+    public void onStop() {
+        super.onStop();
+    }
 
     public void sendLogin(View v) {
 
@@ -531,7 +535,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
                     callOptions = new CallOptions(callee, false, true);
                     switchLayoutTo(CallLayout.INCALL); // call is placed when surface is created
                 }
-                });    		
+                });
     }
 
     @Override
@@ -597,7 +601,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
                     removeDialog(id);
                     }
                     });
-        alert = builder.create();	
+        alert = builder.create();
 
         return alert;
     }
@@ -725,7 +729,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
             case VideoClient.CALL_RECIVEDTERMINATE:
                 if(mInComingDialog!=null && mInComingDialog.isShowing()) {
                     //remote cancel call
-                    mInComingDialog.cancel();
+                    mInComingDialog.dismiss();
                 }
                 callDialog.setMessage("Call Terminated.");
                 Button btn = callDialog.getButton(DialogInterface.BUTTON_NEGATIVE);
@@ -750,16 +754,33 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
     }
 
     private void handleOutgoingCall() {
+        final Runnable dialTimeoutWork = new Runnable() {
+            @Override
+            public void run() {
+                if(callDialog.isShowing()) {
+                    callDialog.dismiss();
+                    _instance.onHangup(null);
+                    Log.i(LOG_TAG, "dialTimeoutWork cancel call");
+                }
+            }
+        };
         callDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
         callDialog.setTitle("Call Status");
-        callDialog.setCancelable(true);
+        callDialog.setCancelable(false);
         callDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "dismiss", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                 _instance.onHangup(null);
                 }
                 });
+        callDialog.setOnDismissListener(new OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface arg0) {
+                mHandler.removeCallbacks(dialTimeoutWork);
+            }
+        });
         callDialog.show();
+        mHandler.postDelayed(dialTimeoutWork, DIALING_TIMEOUT_MS);
     }
 
     private void handleIncomingCall() {
@@ -822,6 +843,23 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
                 })
             .show();
         }
+        final Runnable ringingTimeoutWork = new Runnable() {
+            @Override
+            public void run() {
+                if(mInComingDialog.isShowing()) {
+                    mInComingDialog.dismiss();
+                    _instance.switchLayoutTo(CallLayout.CONTACT);
+                    Log.i(LOG_TAG, "ringingTimeoutWork cancel call");
+                }
+            }
+        };
+        mInComingDialog.setOnDismissListener(new OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface arg0) {
+                mHandler.removeCallbacks(ringingTimeoutWork);
+            }
+        });
+        mHandler.postDelayed(ringingTimeoutWork, RINGING_TIMEOUT_MS);
     }
     public static void callBackXMPPEngineState(String code) {
         short shortCode = new Short(code);
@@ -867,7 +905,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
 
     private void updateListWithContacts() {
         // TODO Auto-generated method stub
-        listAdapter.notifyDataSetChanged(); 	
+        listAdapter.notifyDataSetChanged(); 
     }
 
     public void onHangup(View v) {
@@ -877,7 +915,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
 
     public void onSetVideo(View v) {
         try {
-            boolean result = _instance.SetVideo( !m_videoSetOn );			
+            boolean result = _instance.SetVideo( !m_videoSetOn );
             Log.e(LOG_TAG, "Set video result :" + result );
 
             if( result ) {
@@ -890,7 +928,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
         }
     }
 
-    public void onSetVoice(View v) {			
+    public void onSetVoice(View v) {
         try {
             boolean result = _instance.SetVoice( !m_voiceSetOn );
             Log.e(LOG_TAG, "Set voice result :" + result );
@@ -899,7 +937,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
                 ImageButton voiceSetButton = (ImageButton) _instance.findViewById( R.id.voiceSetButton );
                 m_voiceSetOn = !m_voiceSetOn;
                 voiceSetButton.setImageResource( m_voiceSetOn ? R.drawable.voice_on : R.drawable.voice_off );
-            }				
+            }
         } catch(Exception e) {
             Log.e(LOG_TAG, "Unable to set voice : " + e.getMessage() );
         }

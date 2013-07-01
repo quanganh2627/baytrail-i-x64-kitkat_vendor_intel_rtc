@@ -181,6 +181,8 @@ class GCallClient: public sigslot::has_slots<> {
   void InitMedia();
   void DestroyMedia();
   void InitPresence();
+  void StartXmppPing();
+  void OnPingTimeout();
   void InitIce();
   void OnRequestSignaling();
   void OnSessionState(cricket::BaseGSession* session,

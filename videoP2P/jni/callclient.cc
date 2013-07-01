@@ -54,6 +54,7 @@
 #include "talk/media/base/videorenderer.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/jingleinfotask.h"
+#include "talk/xmpp/pingtask.h"
 #include "talk/p2p/base/constants.h"
 #include "videoclient.h"
 #include "video_render.h"
@@ -64,6 +65,10 @@
 using namespace webrtc;
 
 namespace {
+
+// Must be period >= timeout.
+const uint32 kPingPeriodMillis = 10000;
+const uint32 kPingTimeoutMillis = 10000;
 
 #if LOGGING
 const char* DescribeStatus(buzz::PresenceStatus::Show show, const std::string& desc) {
@@ -383,6 +388,21 @@ void GCallClient::InitPresence() {
 
   friend_invite_send_ = new buzz::FriendInviteSendTask(xmpp_client_);
   friend_invite_send_->Start();
+
+  StartXmppPing();
+}
+
+void GCallClient::StartXmppPing() {
+  buzz::PingTask* ping = new buzz::PingTask(
+      xmpp_client_, talk_base::Thread::Current(),
+      kPingPeriodMillis, kPingTimeoutMillis);
+  ping->SignalTimeout.connect(this, &GCallClient::OnPingTimeout);
+  ping->Start();
+}
+
+void GCallClient::OnPingTimeout() {
+  LOG(LS_WARNING) << "KXMPP Ping timeout. Will keep trying...";
+  StartXmppPing();
 }
 
 void GCallClient::InitIce() {
@@ -403,6 +423,10 @@ void GCallClient::OnStatusUpdate(const buzz::PresenceStatus& status) {
   item.show = status.show();
   item.status = status.status();
 
+  if(item.jid==xmpp_client_->jid()) {
+    LOG(INFO) << "Ignoring roster myself";
+    return;
+  }
   std::string key = item.jid.Str();
 
   if (status.available() && status.voice_capability() && status.video_capability()) {
