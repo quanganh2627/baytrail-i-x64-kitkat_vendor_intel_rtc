@@ -87,7 +87,6 @@ public class ContactList {
         List<Peer> target = new ArrayList<Peer>();
         for(Peer p : mList)
         {
-            System.out.println("DISHA Contact:" + p.getName());
             if((p.getName()).equals(data))
             {
                 target.add(p);
@@ -100,6 +99,7 @@ public class ContactList {
     }
 
     Peer getPeerAt(int pos) {
+        if(pos>=mList.size()) return null;
         return mList.get(pos);
     }
 

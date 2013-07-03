@@ -58,7 +58,7 @@ public class PeerArrayAdapter extends ArrayAdapter<Peer> {
 
     public View getView(int position, View convertView, ViewGroup parent) {
         Peer peer = peerList.getPeerAt(position);
-        if(mFilter!=null && peer.getType()!=mFilter) {
+        if((peer==null) || (mFilter!=null && peer.getType()!=mFilter)) {
             return new LinearLayout(context);
         }
 
