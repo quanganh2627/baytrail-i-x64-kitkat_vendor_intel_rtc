@@ -24,15 +24,24 @@
          android:layout_height="wrap_content"
          android:inputType="textPassword"
          android:hint="Password"/>
-   
+
+     <TextView
+         android:id="@+id/login_connectivity"
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:layout_marginTop="30px"
+         android:paddingLeft="5px"
+         android:textSize="20px"
+         android:textColor="#FF0000" />
+
      <Button
          android:id="@+id/Login"
          android:layout_width="fill_parent"
          android:layout_height="wrap_content"
          android:layout_centerInParent="true"
-         android:layout_marginTop="30px"
          android:text="@string/login"
          android:onClick="sendLogin"/>
+
      
      <LinearLayout
             android:id="@+id/localPreview"

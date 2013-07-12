@@ -51,6 +51,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.graphics.Bitmap;
@@ -78,6 +80,7 @@ import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import android.content.res.Configuration;
 import android.hardware.Camera;
@@ -138,6 +141,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
     private boolean m_videoSetOn = true;
     private boolean m_voiceSetOn = true;
 
+    private ConnectivityManager mCm;
     private AudioManager _audioManager;
     private Context mContext;
     private static boolean autoAccept = true;
@@ -225,6 +229,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
     private EditText fromPasswordField;
 
     private AudioJackReceiver audioJackReceiver;
+    private ConnectivityChangeHandler mConnectivityChangeHandler;
 
     class CallOptions {
         public CallOptions(String callee, boolean hasVideo, boolean hasAudio) {
@@ -263,7 +268,9 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
 
         mContext = this;
         _instance = this;
+        mCm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         audioJackReceiver = new AudioJackReceiver();
+        mConnectivityChangeHandler = new ConnectivityChangeHandler();
         mHandler = new Handler();
         if(mHandler == null) {
             Log.e(LOG_TAG, "Unable to create handler");
@@ -372,6 +379,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
         public void onResume() {
             IntentFilter filter = new IntentFilter(Intent.ACTION_HEADSET_PLUG);
             registerReceiver(audioJackReceiver, filter);
+            registerReceiver(mConnectivityChangeHandler, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
             super.onResume();
         }
 
@@ -382,6 +390,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
                 switchLayoutTo(CallLayout.MAIN);
             }
 
+            unregisterReceiver(mConnectivityChangeHandler);
             unregisterReceiver(audioJackReceiver);
             super.onPause();
         }
@@ -418,6 +427,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
         currentLayout = layout;
         if(localSurfaceLayout!=null) localSurfaceLayout.removeAllViews();
         if(remoteSurfaceLayout!=null) remoteSurfaceLayout.removeAllViews();
+        if(isDialogShowing()) cancelDialog();
 
         if(layout==CallLayout.MAIN) setMainLayout();
         else if(layout==CallLayout.CONTACT) {
@@ -460,6 +470,15 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
         fromPasswordField = (EditText) findViewById(R.id.frompasstext);
         fromUserField.setText(myUser);
         fromPasswordField.setText(myPass);
+        TextView conn = (TextView)findViewById(R.id.login_connectivity);
+        Button login = (Button) findViewById(R.id.Login);
+        if(mConnectivityChangeHandler.isConnected()) {
+            conn.setText(null);
+            login.setEnabled(true);
+        } else {
+            conn.setText(mContext.getString(R.string.no_connection));
+            login.setEnabled(false);
+        }
     }
 
     private void setContactLayout() {
@@ -536,6 +555,15 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
                     switchLayoutTo(CallLayout.INCALL); // call is placed when surface is created
                 }
                 });
+
+        TextView conn = (TextView) findViewById(R.id.dial_connectivity);
+        if(mConnectivityChangeHandler.isConnected()) {
+            conn.setText(null);
+            callButton.setEnabled(true);
+        } else {
+            conn.setText(mContext.getString(R.string.no_connection));
+            callButton.setEnabled(false);
+        }
     }
 
     @Override
@@ -861,6 +889,19 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
         });
         mHandler.postDelayed(ringingTimeoutWork, RINGING_TIMEOUT_MS);
     }
+
+    private boolean isDialogShowing() {
+        return ( (mInComingDialog!=null && mInComingDialog.isShowing()) || (callDialog!=null && callDialog.isShowing()) );
+    }
+
+    private void cancelDialog() {
+        if(mInComingDialog!=null && mInComingDialog.isShowing()) {
+            mInComingDialog.dismiss();
+        } else if(callDialog!=null && callDialog.isShowing()) {
+            callDialog.dismiss();
+        }
+    }
+
     public static void callBackXMPPEngineState(String code) {
         short shortCode = new Short(code);
         switch(shortCode){
@@ -1151,4 +1192,51 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
             }
     }
 
+    class ConnectivityChangeHandler extends BroadcastReceiver {
+        static final int CANCEL_CALL_TIMEOUT_MS = 30*1000;
+        Boolean mConnected = null;
+
+        boolean isConnected() {
+            NetworkInfo ni = _instance.mCm.getActiveNetworkInfo();
+            return (ni!=null && ni.isConnected());
+        }
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            boolean conn = isConnected();
+            if(mConnected!=null && mConnected==conn) return;
+            else {
+                Log.d(LOG_TAG, "onReceive mConnected=" + mConnected);
+                mConnected = conn;
+            }
+
+            if(_instance.currentLayout==CallLayout.MAIN) {
+                //update login button
+                _instance.switchLayoutTo(CallLayout.MAIN);
+            } else if(_instance.currentLayout==CallLayout.CONTACT) {
+                //update dial button
+                _instance.switchLayoutTo(CallLayout.CONTACT);
+                if(!conn) VideoClient.contactList.getList().clear();
+            } else if(_instance.currentLayout==CallLayout.INCALL) {
+                if(conn) {
+                    mHandler.removeCallbacks(cancelCallTask);
+                } else if(_instance.isDialogShowing()) {
+                    _instance.switchLayoutTo(CallLayout.CONTACT);
+                } else {
+                    mHandler.removeCallbacks(cancelCallTask);
+                    mHandler.postDelayed(cancelCallTask, CANCEL_CALL_TIMEOUT_MS);
+                }
+            }
+        }
+
+        final Runnable cancelCallTask = new Runnable() {
+            @Override
+            public void run() {
+                Log.d(LOG_TAG, "cancelCallTask hangup()");
+                _instance.HangUp();
+                _instance.switchLayoutTo(CallLayout.MAIN);
+            }
+        };
+
+    }
 }
