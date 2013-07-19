@@ -154,12 +154,6 @@ void GSessionManager::OnIncomingMessage(const buzz::XmlElement* stanza) {
     session->OnIncomingMessage(msg);
     return;
   }
-
-  if (!session_map_.empty()) {
-    LOG(INFO) << "GSessionManager::OnIncomingMessage already has call in progress";
-    return;
-  }
-
   if (msg.type != ACTION_SESSION_INITIATE) {
     SendErrorMessage(stanza, buzz::QN_STANZA_BAD_REQUEST, "modify",
                      "unknown session", NULL);

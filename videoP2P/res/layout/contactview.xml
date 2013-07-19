@@ -67,18 +67,10 @@
         </LinearLayout>
             
     </LinearLayout>
-
-    <TextView
-         android:id="@+id/dial_connectivity"
-         android:layout_width="match_parent"
-         android:layout_height="wrap_content"
-         android:layout_marginTop="30px"
-         android:paddingLeft="5px"
-         android:textSize="20px"
-         android:textColor="#FF0000" />
-
+	
     <Button
         android:id="@+id/callbutton"
+        android:layout_marginTop="5dip"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
