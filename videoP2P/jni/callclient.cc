@@ -422,6 +422,7 @@ void GCallClient::OnStatusUpdate(const buzz::PresenceStatus& status) {
   item.jid = status.jid();
   item.show = status.show();
   item.status = status.status();
+  item.pendingRemoval = false;
 
   if(item.jid==xmpp_client_->jid()) {
     LOG(INFO) << "Ignoring roster myself";
@@ -436,11 +437,17 @@ void GCallClient::OnStatusUpdate(const buzz::PresenceStatus& status) {
     callback_handler_ext(videoP2P::PRESENCE_STATE_CALLBACK, videoP2P::CALL_PRESENCE_DETECTED, key.c_str());
 
   } else {
-    LOG(INFO) <<"Removing from roster: " << key.c_str();
     RosterMap::iterator iter = roster_->find(key);
     if (iter != roster_->end())
-      roster_->erase(iter);
-    callback_handler_ext(videoP2P::PRESENCE_STATE_CALLBACK, videoP2P::CALL_PRESENCE_DROPPED, key.c_str());
+      if(kxmpp_thread_->IsCalling()) {
+        LOG(INFO) <<"Calling... Skip removing roster";
+        iter->second.pendingRemoval = true;
+        return;
+      } else {
+        LOG(INFO) <<"Removing from roster: " << key.c_str();
+        roster_->erase(iter);
+        callback_handler_ext(videoP2P::PRESENCE_STATE_CALLBACK, videoP2P::CALL_PRESENCE_DROPPED, key.c_str());
+      }
   }
 }
 
@@ -483,31 +490,38 @@ void GCallClient::InviteFriend(const std::string& name) {
   LOG(INFO) <<"Requesting to befriend " <<  name.c_str();
 }
 
-void GCallClient::MakeCallTo(const std::string& name, const cricket::SessionDescription* desc) {
+bool GCallClient::CheckCallee(const buzz::Jid callee) {
+  LOG(INFO) << "GCallClient::CheckCallee";
   bool found = false;
-  buzz::Jid callto_jid(name);
   buzz::Jid found_jid;
 
   // otherwise, it's a friend
   for (RosterMap::iterator iter = roster_->begin();
-      iter != roster_->end(); ++iter) {
-    if (iter->second.jid==callto_jid) {
+    iter != roster_->end(); ++iter) {
+    if (iter->second.jid==callee) {
       found = true;
       found_jid = iter->second.jid;
       break;
     }
   }
+  return found;
+}
+
+void GCallClient::MakeCallTo(const std::string& name, const cricket::SessionDescription* desc) {
+  buzz::Jid callto_jid(name);
+  bool found = CheckCallee(callto_jid);
 
   if (found) {
-    LOG(INFO) <<"Found " << found_jid.Str().c_str();
+    LOG(INFO) <<"Found " << name;
     LOG(INFO) << "GCallClient::MakeCallTo-ConnectToPeer";
     const std::string& type = cricket::NS_JINGLE_RTP;
-    session_ = session_manager_->CreateSession(found_jid.Str().c_str(), type);
+    session_ = session_manager_->CreateSession(name, type);
     session_->set_initiator_name(xmpp_client_->jid().Str().c_str());
-    const std::string& toStr = found_jid.Str();
+    const std::string& toStr = name;
     session_->Initiate(toStr, desc);
   } else {
     LOG(INFO) <<"Could not find online friend " << name.c_str();
+    ASSERT(false);
   }
 }
 
@@ -536,7 +550,21 @@ void GCallClient::ReceiveReject() {
 void GCallClient::HangUp() {
   LOG(INFO) << "GCallClient::HangUp";
   incoming_call_ = false;
-  session_->TerminateWithReason(cricket::STR_TERMINATE_SUCCESS);
+  if(session_) {
+    session_->TerminateWithReason(cricket::STR_TERMINATE_SUCCESS);
+    return;
+  }
+
+  RosterMap::iterator iter = roster_->begin();
+  while (iter != roster_->end()) {
+    if(iter->second.pendingRemoval) {
+      callback_handler_ext(videoP2P::PRESENCE_STATE_CALLBACK, videoP2P::CALL_PRESENCE_DROPPED, iter->second.jid.Str().c_str());
+      roster_->erase(iter++);
+    }
+    else {
+      iter++;
+    }
+  }
 }
 
 void GCallClient::SetNick(const std::string& muc_nick) {

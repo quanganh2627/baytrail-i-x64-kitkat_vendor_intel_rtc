@@ -68,6 +68,7 @@ public:
   bool SetVideo(bool enable);
   bool SetVoice(bool enable);
   std::string GetCaller();
+  bool IsCalling();
 
   GCallClient* client_;
   void UpdateIceServers(const webrtc::PeerConnectionInterface::IceServers *iceservers);

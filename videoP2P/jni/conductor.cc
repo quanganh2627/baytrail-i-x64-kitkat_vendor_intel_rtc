@@ -271,11 +271,12 @@ void Conductor::ConnectToPeer(const std::string &peer_name, bool video, bool aud
     return;
   }
 
+  peer_name_ = peer_name;
   if (InitializePeerConnection(video, audio)) {
-    peer_name_ = peer_name;
     peer_connection_->CreateOffer(this, NULL);
   } else {
     LOG(LS_ERROR) << "Failed to initialize PeerConnection";
+    peer_name_ = "";
   }
 }
 

@@ -294,12 +294,14 @@ void KXmppThread::Disconnect() {
 
 void KXmppThread::HangUp() {
   LOG(INFO) << "KXmppThread::HangUp()";
-  Post(this, MSG_HANG_UP);
   conductor_->Close();
+  Post(this, MSG_HANG_UP);
 }
 
 void KXmppThread::MakeCall(std::string username, bool video, bool audio) {
   LOG(INFO) << "KXmppThread::MakeCall()";
+  buzz::Jid jid(username);
+  if(!client_->CheckCallee(jid)) return;
   if (pump_ == NULL) {
     Init();
   }
@@ -313,6 +315,7 @@ void KXmppThread::AnswerCall(bool video, bool audio) {
 }
 
 void KXmppThread::SendIceCandidate(const webrtc::IceCandidateInterface *c) {
+  if(client_->GetSession()==NULL) return;
   LOG(INFO) << "KXmppThread::SendIceCandidate()";
   Post(this, MSG_SEND_CANDIDATE, new CandidateData(c));
 }
@@ -387,6 +390,10 @@ std::string KXmppThread::GetCaller() {
     toReturn = client_->GetCaller();
   }
   return toReturn;
+}
+
+bool KXmppThread::IsCalling() {
+  return conductor_->IsCalling();
 }
 
 void KXmppThread::UpdateIceServers(const webrtc::PeerConnectionInterface::IceServers *iceservers)

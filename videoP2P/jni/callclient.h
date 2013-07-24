@@ -77,6 +77,7 @@ struct RosterItem {
   buzz::Jid jid;
   buzz::PresenceStatus::Show show;
   std::string status;
+  bool pendingRemoval;
 };
 
 struct StaticRenderedView {
@@ -141,6 +142,7 @@ class GCallClient: public sigslot::has_slots<> {
   void InviteFriend(const std::string& user);
   void SetNick(const std::string& muc_nick);
   void SetPortAllocatorFlags(uint32 flags) { portallocator_flags_ = flags; }
+  bool CheckCallee(const buzz::Jid callee);
   void MakeCallTo(const std::string& name, const cricket::SessionDescription* desc);
   void SendCandidate(const webrtc::IceCandidateInterface* candidate);
   void OnRemoteCandidate(const std::string& content_name, const cricket::Candidate& candidate);
@@ -161,7 +163,7 @@ class GCallClient: public sigslot::has_slots<> {
   typedef std::map<buzz::Jid, buzz::Muc*> MucMap;
 
   void OnSessionCreate(cricket::GSession* session, bool initiate);
-  void OnSessionDestroy(cricket::GSession* session) {} // do nothing for now
+  void OnSessionDestroy(cricket::GSession* session) { session_ = NULL; }
   cricket::GSession* GetSession() { return session_; }
   bool IsIncomingCall() { return incoming_call_; }
 

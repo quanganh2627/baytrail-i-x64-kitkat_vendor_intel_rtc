@@ -83,6 +83,7 @@ class Conductor
   void SetImageOrientation(int degrees);
   bool SetVideo(bool enable);
   bool SetVoice(bool enable);
+  bool IsCalling() { return (peer_name_!=""); }
 
   virtual void Close();
 
