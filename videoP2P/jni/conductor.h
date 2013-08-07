@@ -133,6 +133,7 @@ class Conductor
   std::string server_;
   const webrtc::PeerConnectionInterface::IceServers *iceservers_;
   std::vector<const webrtc::IceCandidateInterface*> candidate_queue_;
+  cricket::VideoCapturer *capturer_;
 };
 
 #endif  // PEERCONNECTION_SAMPLES_CLIENT_CONDUCTOR_H_

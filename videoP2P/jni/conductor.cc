@@ -99,9 +99,9 @@ void Conductor::SetCamera(int deviceId, std::string &deviceUniqueName) {
   webrtc::VideoTrackVector tracks = stream->GetVideoTracks();
   if (!tracks.empty()) {
     webrtc::VideoTrackInterface* track = tracks[0];
-    cricket::WebRtcVideoCapturer *capturer = (cricket::WebRtcVideoCapturer*)track->GetSource()->GetVideoCapturer();
+    capturer_ = (cricket::VideoCapturer*)track->GetSource()->GetVideoCapturer();
     cricket::Device dev(camera_name_, camera_id_);
-    capturer->SwitchCamera(dev, imageOrientation_);
+    capturer_->SwitchCamera(dev, imageOrientation_);
   }
 
   stream->Release();
@@ -109,7 +109,11 @@ void Conductor::SetCamera(int deviceId, std::string &deviceUniqueName) {
 
 void Conductor::SetImageOrientation(int degrees)
 {
-  imageOrientation_ = degrees;
+  if(imageOrientation_!=degrees) {
+    LOG(INFO) << "Conductor::SetImageOrientation " << degrees << ", capturer_:" << capturer_;
+    if(capturer_) capturer_->SetCaptureRotation(degrees);
+    imageOrientation_ = degrees;
+  }
 }
 
 bool Conductor::SetVideo(bool enable) {

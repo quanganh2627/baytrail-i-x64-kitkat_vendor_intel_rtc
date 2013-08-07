@@ -339,6 +339,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
                             if (currentQuadrant != quadrant) {
                                 setQuadrant(quadrant);
                                 currentQuadrant = quadrant;
+                                SetImageOrientation(quadrant*90);
                             }
                         }
                     }
@@ -461,7 +462,8 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
         else if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
             cameraUniqueName = "Camera " + cameraId + ", Facing back, Orientation "+info.orientation;
         }
-        SetImageOrientation(info.orientation);
+
+//        SetImageOrientation(info.orientation);
         SetCamera(cameraId, cameraUniqueName);
     }
     private void setMainLayout() {
