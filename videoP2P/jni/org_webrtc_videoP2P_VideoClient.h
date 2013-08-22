@@ -52,6 +52,14 @@ JNIEXPORT jboolean JNICALL
     Java_org_webrtc_videoP2P_VideoClient_IsTestModeActive
   (JNIEnv *, jobject );
 
+JNIEXPORT jboolean JNICALL
+    Java_org_webrtc_videoP2P_VideoClient_IsIncomingCallSupportVideo
+  (JNIEnv *, jobject );
+
+JNIEXPORT jboolean JNICALL
+    Java_org_webrtc_videoP2P_VideoClient_IsIncomingCallSupportAudio
+  (JNIEnv *, jobject );
+
 JNIEXPORT jint JNICALL
     Java_org_webrtc_videoP2P_VideoClient_Destroy
   (JNIEnv *, jobject);

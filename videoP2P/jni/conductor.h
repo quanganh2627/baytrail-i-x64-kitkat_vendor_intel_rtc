@@ -35,6 +35,7 @@
 #include <string>
 
 #include "talk/app/webrtc/mediastreaminterface.h"
+#include "talk/app/webrtc/mediaconstraintsinterface.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/base/scoped_ptr.h"
 
@@ -50,6 +51,34 @@ class VideoRenderer;
 
 class KXmppThread;
 class GCallClient;
+
+class MediaConstraints : public webrtc::MediaConstraintsInterface {
+ public:
+  MediaConstraints() {};
+  virtual ~MediaConstraints() {};
+
+  template <class T>
+  void AddMandatory(const std::string& key, const T& value) {
+    mandatory_.push_back(Constraint(key, talk_base::ToString<T>(value)));
+  }
+
+  template <class T>
+  void AddOptional(const std::string& key, const T& value) {
+    optional_.push_back(Constraint(key, talk_base::ToString<T>(value)));
+  }
+
+  virtual const Constraints& GetMandatory() const { return mandatory_; };
+  virtual const Constraints& GetOptional() const { return optional_; };
+
+  void SetMedia(bool video, bool audio) {
+    AddMandatory(MediaConstraintsInterface::kOfferToReceiveVideo, video);
+    AddMandatory(MediaConstraintsInterface::kOfferToReceiveAudio, audio);
+  }
+
+ private:
+  Constraints mandatory_;
+  Constraints optional_;
+};
 
 class Conductor
   : public webrtc::PeerConnectionObserver,

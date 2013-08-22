@@ -702,6 +702,8 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
     private native boolean SetVoice(boolean enable);
     private native String GetCaller();
     private native boolean IsTestModeActive();
+    private native boolean IsIncomingCallSupportVideo();
+    private native boolean IsIncomingCallSupportAudio();
 
     private void RejectAndSwitchView() {
         switchLayoutTo(CallLayout.CONTACT);
@@ -851,7 +853,16 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
                     })
             .show(); 
         } else {
-            CharSequence[] accept_choices = {"Accept", "Accept - Video only", "Accept - Audio only", "Reject"};
+            final boolean video = IsIncomingCallSupportVideo();
+            final boolean audio = IsIncomingCallSupportAudio();
+            CharSequence[] accept_choices = {"Accept", "Reject"};
+            if(video && !audio)
+                accept_choices[0] = "Accept - Video only";
+            else if(!video && audio)
+                accept_choices[0] = "Accept - Audio only";
+            else if(!video && !audio)
+                Log.e(LOG_TAG, "Error: No supported media, or calling IsIncomingCallSupport in outgoing call");
+
             AlertDialog.Builder builder = new AlertDialog.Builder(_instance);
             mInComingDialog = builder
                 .setTitle("Incoming call")
@@ -861,19 +872,9 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
                         case 0:
                         // Accept button clicked
                         Log.d(LOG_TAG, "Accepting incoming call from " + _instance.GetCaller());
-                        _instance.AcceptCall(true, true);
+                        _instance.AcceptCall(video, audio);
                         break;
                         case 1:
-                        // Accept button(video only) clicked 
-                        Log.d(LOG_TAG, "Accepting incoming call from " + _instance.GetCaller() + " and sending video only.");
-                        _instance.AcceptCall(true, false);
-                        break;
-                        case 2:
-                        // Accept button(audio only) clicked
-                        Log.d(LOG_TAG, "Accepting incoming call from " + _instance.GetCaller() + " and sending audio only.");
-                        _instance.AcceptCall(false, true);
-                        break;
-                        case 3:
                         // Reject button clicked
                         Log.d(LOG_TAG, "Rejecting incoming call from " + _instance.GetCaller());
                         _instance.RejectAndSwitchView();

@@ -340,6 +340,28 @@ JNIEXPORT jboolean JNICALL
 #endif
 }
 
+JNIEXPORT jboolean JNICALL
+    Java_org_webrtc_videoP2P_VideoClient_IsIncomingCallSupportVideo
+  (JNIEnv *, jobject ) {
+  LOGI("IsIncomingCallSupportVideo");
+  if(xmpp_thread_) {
+    return xmpp_thread_->client_->IsIncomingCall() &&
+           xmpp_thread_->client_->IsIncomingCallSupportVideo();
+  }
+  return false;
+}
+
+JNIEXPORT jboolean JNICALL
+    Java_org_webrtc_videoP2P_VideoClient_IsIncomingCallSupportAudio
+  (JNIEnv *, jobject ) {
+  LOGI("IsIncomingCallSupportAudio");
+  if(xmpp_thread_) {
+    return xmpp_thread_->client_->IsIncomingCall() &&
+           xmpp_thread_->client_->IsIncomingCallSupportAudio();
+  }
+  return false;
+}
+
 JNIEXPORT jint JNICALL
 Java_org_webrtc_videoP2P_VideoClient_Destroy(
         JNIEnv *env,

@@ -280,7 +280,9 @@ void Conductor::ConnectToPeer(const std::string &peer_name, bool video, bool aud
 
   peer_name_ = peer_name;
   if (InitializePeerConnection(video, audio)) {
-    peer_connection_->CreateOffer(this, NULL);
+    MediaConstraints constraint;
+    constraint.SetMedia(video, audio);
+    peer_connection_->CreateOffer(this, &constraint);
   } else {
     LOG(LS_ERROR) << "Failed to initialize PeerConnection";
     peer_name_ = "";
@@ -307,7 +309,9 @@ void Conductor::OnInitiateMessage(bool video, bool audio)
   }
   peer_connection_->SetRemoteDescription(
       DummySetSessionDescriptionObserver::Create(), session_description);
-  peer_connection_->CreateAnswer(this, NULL);
+  MediaConstraints constraint;
+  constraint.SetMedia(video, audio);
+  peer_connection_->CreateAnswer(this, &constraint);
 }
 
 cricket::VideoCapturer* Conductor::OpenVideoCaptureDevice() {

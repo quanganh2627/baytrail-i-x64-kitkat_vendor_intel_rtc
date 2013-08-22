@@ -166,6 +166,12 @@ class GCallClient: public sigslot::has_slots<> {
   void OnSessionDestroy(cricket::GSession* session) { session_ = NULL; }
   cricket::GSession* GetSession() { return session_; }
   bool IsIncomingCall() { return incoming_call_; }
+  bool IsIncomingCallSupportVideo() { return remote_cap_video_; }
+  bool IsIncomingCallSupportAudio() { return remote_cap_audio_; }
+  void SetIncomingCallCapability(bool video, bool audio) {
+    remote_cap_video_ = video;
+    remote_cap_audio_ = audio;
+  }
 
   jbyte **y_plane_;
   jbyte **u_plane_;
@@ -245,6 +251,8 @@ class GCallClient: public sigslot::has_slots<> {
   MucMap mucs_;
 
   bool incoming_call_;
+  bool remote_cap_video_;
+  bool remote_cap_audio_;
   bool auto_accept_;
   bool render_;
   bool data_channel_enabled_;

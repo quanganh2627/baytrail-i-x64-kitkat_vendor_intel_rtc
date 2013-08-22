@@ -26,11 +26,13 @@
  */
 
 #include "gsession.h"
+#include "callclient.h"
 #include "talk/base/common.h"
 #include "talk/base/logging.h"
 #include "talk/base/helpers.h"
 #include "talk/base/scoped_ptr.h"
 #include "talk/base/sslstreamadapter.h"
+#include "talk/session/media/mediasession.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/jid.h"
 #include "talk/p2p/base/p2ptransport.h"
@@ -529,6 +531,14 @@ bool GSession::OnInitiateMessage(const SessionMessage& msg,
                             &init, error))
     return false;
 
+  bool video = false;
+  bool audio = false;
+  for (ContentInfos::const_iterator content = init.contents.begin();
+       content != init.contents.end(); ++content) {
+    if(cricket::IsVideoContent(content)) video = true;
+    else if(cricket::IsAudioContent(content)) audio = true;
+  }
+  client_->SetIncomingCallCapability(video, audio);
   set_remote_name(msg.from);
   set_initiator_name(msg.initiator);
   set_remote_description(new SessionDescription(init.ClearContents(),
