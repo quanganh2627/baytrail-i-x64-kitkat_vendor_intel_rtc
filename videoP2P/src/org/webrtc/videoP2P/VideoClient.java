@@ -231,6 +231,9 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
     private AudioJackReceiver audioJackReceiver;
     private ConnectivityChangeHandler mConnectivityChangeHandler;
 
+    private int lastAudioMode;
+    private boolean wasSpeakerphoneOn;
+
     class CallOptions {
         public CallOptions(String callee, boolean hasVideo, boolean hasAudio) {
             mCallee = callee;
@@ -292,7 +295,8 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
         if (_audioManager == null) {
             Log.e("*Webrtc*", "Could not change audio routing - no audio manager");
         } else {
-            _audioManager.setMode(AudioManager.MODE_IN_CALL);
+            lastAudioMode = _audioManager.getMode();
+            wasSpeakerphoneOn = _audioManager.isSpeakerphoneOn();
             _audioManager.setSpeakerphoneOn(true);
         }
 
@@ -420,6 +424,9 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
     }
 
     protected void onDestroy() {
+        // restore audio manager setting
+        _audioManager.setMode(lastAudioMode);
+        _audioManager.setSpeakerphoneOn(wasSpeakerphoneOn);
         super.onDestroy();
         Destroy();
     }
@@ -430,13 +437,18 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
         if(remoteSurfaceLayout!=null) remoteSurfaceLayout.removeAllViews();
         if(isDialogShowing()) cancelDialog();
 
-        if(layout==CallLayout.MAIN) setMainLayout();
+        if(layout==CallLayout.MAIN){
+            _audioManager.setMode(lastAudioMode);
+            setMainLayout();
+        }
         else if(layout==CallLayout.CONTACT) {
+            _audioManager.setMode(lastAudioMode);
             // Need to set orientation after Login as Login
             // creates the thread and Conductor object.
             setContactLayout();
         }
         else if(layout==CallLayout.INCALL) {
+            _audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
             usingFrontCamera = true;
             SelectCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
             StartSurface();
