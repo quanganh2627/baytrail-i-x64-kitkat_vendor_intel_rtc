@@ -51,6 +51,7 @@ LOCAL_CFLAGS := \
     '-DLOGGING=1' \
     '-DWEBRTC_ANDROID_DEBUG=1' \
     '-DANDROID' \
+    '-DINTEL_ANDROID' \
     '-DDISABLE_DYNAMIC_CAST' \
     '-D_REENTRANT' \
     '-DPOSIX' \
@@ -87,7 +88,39 @@ LOCAL_C_INCLUDES := \
     $(WEBRTC_SRC_PATH)/modules/video_capture/android \
     $(WEBRTC_SRC_PATH)/modules/video_render/include \
     $(JINGLE_SRC_PATH)/third_party \
-    $(JINGLE_SRC_PATH)
+    $(JINGLE_SRC_PATH) \
+    $(TARGET_OUT_HEADERS) \
+    $(TARGET_OUT_HEADERS)/webrtc \
+    $(TARGET_OUT_HEADERS)/webrtc/talk \
+    $(TARGET_OUT_HEADERS)/webrtc/talk/app \
+    $(TARGET_OUT_HEADERS)/webrtc/talk/app/webrtc \
+    $(TARGET_OUT_HEADERS)/webrtc/talk/base \
+    $(TARGET_OUT_HEADERS)/webrtc/talk/examples \
+    $(TARGET_OUT_HEADERS)/webrtc/talk/examples/call \
+    $(TARGET_OUT_HEADERS)/webrtc/talk/examples/peerconnection \
+    $(TARGET_OUT_HEADERS)/webrtc/talk/examples/peerconnection/client \
+    $(TARGET_OUT_HEADERS)/webrtc/talk/media/base \
+    $(TARGET_OUT_HEADERS)/webrtc/talk/media/devices \
+    $(TARGET_OUT_HEADERS)/webrtc/talk/media/webrtc \
+    $(TARGET_OUT_HEADERS)/webrtc/talk/p2p/base \
+    $(TARGET_OUT_HEADERS)/webrtc/talk/p2p/client \
+    $(TARGET_OUT_HEADERS)/webrtc/talk/session/media \
+    $(TARGET_OUT_HEADERS)/webrtc/talk/xmllite \
+    $(TARGET_OUT_HEADERS)/webrtc/talk/xmpp \
+    $(TARGET_OUT_HEADERS)/webrtc/third_party \
+    $(TARGET_OUT_HEADERS)/webrtc/third_party/webrtc \
+    $(TARGET_OUT_HEADERS)/webrtc/third_party/webrtc/common_video \
+    $(TARGET_OUT_HEADERS)/webrtc/third_party/webrtc/common_video/interface \
+    $(TARGET_OUT_HEADERS)/webrtc/third_party/webrtc/common_video/libyuv/include \
+    $(TARGET_OUT_HEADERS)/webrtc/third_party/webrtc/modules/interface \
+    $(TARGET_OUT_HEADERS)/webrtc/third_party/webrtc/modules/video_capture \
+    $(TARGET_OUT_HEADERS)/webrtc/third_party/webrtc/modules/video_capture/android \
+    $(TARGET_OUT_HEADERS)/webrtc/third_party/webrtc/modules/video_capture/include \
+    $(TARGET_OUT_HEADERS)/webrtc/third_party/webrtc/modules/video_render/include \
+    $(TARGET_OUT_HEADERS)/webrtc/third_party/webrtc/system_wrappers/interface \
+    $(TARGET_OUT_HEADERS)/webrtc/third_party/webrtc/video_engine/include \
+    $(TARGET_OUT_HEADERS)/webrtc/third_party/webrtc/voice_engine/include
+
 
 LOCAL_SHARED_LIBRARIES := \
     libGLESv2 \

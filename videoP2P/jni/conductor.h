@@ -79,7 +79,7 @@ class Conductor
   void DisconnectFromCurrentPeer();
   bool connection_active() const;
 
-  void SetCamera(int deviceId, std::string &deviceUniqueName);
+  void SetCamera(int deviceId, std::string &deviceUniqueName, std::string &packageName);
   void SetImageOrientation(int degrees);
   bool SetVideo(bool enable);
   bool SetVoice(bool enable);
@@ -122,6 +122,7 @@ class Conductor
   std::string camera_name_;
   int camera_id_;
   int imageOrientation_;
+  std::string package_name_;
 
 //  PeerConnectionClient* client_;
 //  MainWindow* main_wnd_;

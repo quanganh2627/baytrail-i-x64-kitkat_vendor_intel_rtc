@@ -39,7 +39,7 @@
 #include "gsession.h"
 #include "talk/app/webrtc/videosourceinterface.h"
 #include "talk/media/webrtc/webrtcvideocapturer.h"
-#include "vie_base.h"
+#include "third_party/webrtc/video_engine/include/vie_base.h"
 
 class DummySetSessionDescriptionObserver
     : public webrtc::SetSessionDescriptionObserver {
@@ -81,13 +81,15 @@ bool Conductor::connection_active() const {
   return peer_connection_.get() != NULL;
 }
 
-void Conductor::SetCamera(int deviceId, std::string &deviceUniqueName) {
+void Conductor::SetCamera(int deviceId, std::string &deviceUniqueName, std::string &packageName) {
+  LOG(INFO) << "Conductor::SetCamera " << packageName;
+  package_name_ = packageName;
   camera_id_ = deviceId;
   camera_name_ = deviceUniqueName;
   std::map<std::string, talk_base::scoped_refptr<webrtc::MediaStreamInterface> >::iterator it
-		= active_streams_.find(kStreamLabel);
+                = active_streams_.find(kStreamLabel);
 
-  if(it == active_streams_.end())	{
+  if(it == active_streams_.end()) {
     LOG(LS_ERROR) << "Stream list is empty.";
     return;
   }
@@ -100,7 +102,8 @@ void Conductor::SetCamera(int deviceId, std::string &deviceUniqueName) {
   if (!tracks.empty()) {
     webrtc::VideoTrackInterface* track = tracks[0];
     capturer_ = (cricket::VideoCapturer*)track->GetSource()->GetVideoCapturer();
-    cricket::Device dev(camera_name_, camera_id_);
+    LOG(INFO) << "Conductor::SetCamera creating Device for " << package_name_;
+    cricket::Device dev(camera_name_, camera_id_, package_name_);
     capturer_->SwitchCamera(dev, imageOrientation_);
   }
 
@@ -315,7 +318,8 @@ cricket::VideoCapturer* Conductor::OpenVideoCaptureDevice() {
     LOG(LS_ERROR) << "Can't create device manager";
     return NULL;
   }
-  cricket::Device dev(camera_name_, camera_id_);
+  cricket::Device dev(camera_name_, camera_id_, package_name_);
+//MR1:  cricket::Device dev(camera_name_, camera_id_);
 
   cricket::VideoCapturer* capturer = dev_manager->CreateVideoCapturer(dev);
 
@@ -402,7 +406,7 @@ void Conductor::AddIceCandidate(const webrtc::IceCandidateInterface* candidate)
 
 void Conductor::ReceiveAccept(const cricket::SessionDescription* desc) {
   LOG(INFO) << "Conductor::ReceiveAccept, calling SetRemoteDescription";
-  webrtc::SessionDescriptionInterface* session_description = webrtc::CreateSessionDescription("answer", const_cast<cricket::SessionDescription*>(desc->Copy())); 
+  webrtc::SessionDescriptionInterface* session_description = webrtc::CreateSessionDescription("answer",const_cast<cricket::SessionDescription*>(desc->Copy()));
   if (!session_description) {
     LOG(LS_ERROR) << "Failed to create session_description";
     return;

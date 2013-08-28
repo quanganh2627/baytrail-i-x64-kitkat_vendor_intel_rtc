@@ -217,7 +217,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
     private static final int INIT_BITRATE = 400;
     private static Handler mHandler;
     private LayoutInflater inflater;
-    private native int SetCamera(int deviceId, String deviceUniqueStr);
+    private native int SetCamera(int deviceId, String deviceUniqueStr, String packageName);
     private native int SetImageOrientation(int degrees);
     private native int SetRemoteSurfaceView(SurfaceView surface);
     private native int SetRemoteSurface(Object glSurface);
@@ -277,7 +277,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
         }
         contactList = new ContactList();
         callDialog = new ProgressDialog(this);
-        m_Settings = new Settings(this, IsTestModeActive()); 
+        m_Settings = new Settings(this,IsTestModeActive()); 
 
         //Without this, audio record buffer was not being emptied as fast as it was filled.
         //We probably only want to do this when a call is actually happening.
@@ -464,7 +464,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
         }
 
 //        SetImageOrientation(info.orientation);
-        SetCamera(cameraId, cameraUniqueName);
+        SetCamera(cameraId, cameraUniqueName, mContext.getPackageName());
     }
     private void setMainLayout() {
         setContentView(R.layout.mainview);
@@ -519,13 +519,13 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
         RelativeLayout.LayoutParams params2 = new RelativeLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
         params2.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
 
-        LinearLayout rl_callbuttons_extras = (LinearLayout) findViewById(R.id.rl_callbutton_extras);
+        LinearLayout rl_callbuttons_extras = (LinearLayout)findViewById(R.id.rl_callbutton_extras);
         if( IsTestModeActive() ) {
             rl_callbuttons_extras.setVisibility( LinearLayout.VISIBLE );
         }
 
-        Button callButton = (Button) findViewById(R.id.callbutton);
-        callButton.setOnClickListener( new View.OnClickListener() {
+        Button callButton = (Button)findViewById(R.id.callbutton);
+        callButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View arg0) {
                     String callee = contactList.getSelection();
@@ -536,8 +536,8 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
                 }
         });
 
-        Button videoonly_callButton = (Button) findViewById(R.id.callbutton_videoonly); 
-        videoonly_callButton.setOnClickListener( new View.OnClickListener() {
+        Button videoonly_callButton = (Button)findViewById(R.id.callbutton_videoonly); 
+        videoonly_callButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View arg0) {
                 String callee = contactList.getSelection();
@@ -547,8 +547,8 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
                 }
                 });
 
-        Button audioonly_callButton = (Button) findViewById(R.id.callbutton_audioonly); 
-        audioonly_callButton.setOnClickListener( new View.OnClickListener() {
+        Button audioonly_callButton = (Button)findViewById(R.id.callbutton_audioonly); 
+        audioonly_callButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View arg0) {
                 String callee = contactList.getSelection();
@@ -558,7 +558,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
                 }
                 });
 
-        TextView conn = (TextView) findViewById(R.id.dial_connectivity);
+        TextView conn = (TextView)findViewById(R.id.dial_connectivity);
         if(mConnectivityChangeHandler.isConnected()) {
             conn.setText(null);
             callButton.setEnabled(true);

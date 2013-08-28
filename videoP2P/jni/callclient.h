@@ -40,8 +40,8 @@
 #include "talk/xmpp/presencestatus.h"
 #include "talk/examples/call/console.h"
 
-#include "common_types.h"
-#include "vie_file.h"
+#include "third_party/webrtc/common_types.h"
+#include "third_party/webrtc/video_engine/include/vie_file.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
 
 class KXmppThread;

@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/xmpp/constants.h"
+#include "talk/xmpp/xmpp_constants.h"
 #include "talk/examples/call/friendinvitesendtask.h"
 
 namespace buzz {

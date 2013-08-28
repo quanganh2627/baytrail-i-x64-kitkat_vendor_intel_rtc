@@ -63,7 +63,7 @@ public:
   void AddCandidate(const std::string& content_name, const cricket::Candidate& candidate);
   void ReceiveReject(const cricket::SessionDescription* desc);
   bool Terminate();
-  void SetCamera(int deviceId, std::string &deviceUniqueName);
+  void SetCamera(int deviceId, std::string &deviceUniqueName, std::string &packageName);
   void SetImageOrientation(int degrees);
   bool SetVideo(bool enable);
   bool SetVoice(bool enable);

@@ -363,9 +363,9 @@ bool KXmppThread::Terminate() {
   return terminated;
 }
 
-void KXmppThread::SetCamera(int deviceId, std::string &deviceUniqueName) {
-  LOG(INFO) << "KXmppThread::SetCamera(" << deviceId << ", " << deviceUniqueName << ")";
-  conductor_->SetCamera(deviceId, deviceUniqueName);
+void KXmppThread::SetCamera(int deviceId, std::string &deviceUniqueName, std::string &packageName) {
+  LOG(INFO) << "KXmppThread::SetCamera(" << deviceId << ", " << deviceUniqueName << "," << packageName << ")" ;
+  conductor_->SetCamera(deviceId, deviceUniqueName, packageName);
 }
 
 void KXmppThread::SetImageOrientation(int degrees) {

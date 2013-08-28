@@ -35,7 +35,7 @@
 #include "talk/p2p/base/constants.h"
 #include "gsession.h"
 #include "talk/p2p/base/sessionmessages.h"
-#include "talk/xmpp/constants.h"
+#include "talk/xmpp/xmpp_constants.h"
 #include "talk/xmpp/jid.h"
 #include "callclient.h"
 

@@ -29,7 +29,7 @@
 
 #include "talk/base/stringencode.h"
 #include "talk/examples/call/muc.h"
-#include "talk/xmpp/constants.h"
+#include "talk/xmpp/xmpp_constants.h"
 
 
 
