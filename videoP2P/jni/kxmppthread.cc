@@ -95,10 +95,10 @@ struct AnswerData: public talk_base::MessageData {
 };
 
 struct CandidateData: public talk_base::MessageData {
-  CandidateData(const webrtc::IceCandidateInterface* c) { 
+  CandidateData(const webrtc::IceCandidateInterface* c) {
     candidate = webrtc::CreateIceCandidate(c->sdp_mid(), c->sdp_mline_index(), c->candidate());
   }
-  CandidateData(const std::string& content_name, const cricket::Candidate& c) { 
+  CandidateData(const std::string& content_name, const cricket::Candidate& c) {
     candidate = webrtc::CreateIceCandidate(content_name, 0, c);
   }
   virtual ~CandidateData() {}
@@ -128,7 +128,7 @@ public:
     int debug_output_len_;
     int debug_output_alloc_;
     bool censor_password_;
-    
+
     void Input(const char * data, int len) {
         if (debug_input_len_ + len > debug_input_alloc_) {
             char * old_buf = debug_input_buf_;
@@ -144,7 +144,7 @@ public:
         debug_input_len_ += len;
         DebugPrint(debug_input_buf_, &debug_input_len_, false);
     }
-    
+
     void Output(const char * data, int len) {
         if (debug_output_len_ + len > debug_output_alloc_) {
             char * old_buf = debug_output_buf_;
@@ -160,7 +160,7 @@ public:
         debug_output_len_ += len;
         DebugPrint(debug_output_buf_, &debug_output_len_, true);
     }
-    
+
     static bool IsAuthTag(const char * str, size_t len) {
         if (str[0] == '<' && str[1] == 'a' &&
             str[2] == 'u' &&
@@ -168,13 +168,13 @@ public:
             str[4] == 'h' &&
             str[5] <= ' ') {
             std::string tag(str, len);
-            
+
             if (tag.find("mechanism") != std::string::npos)
                 return true;
         }
         return false;
     }
-    
+
     void DebugPrint(char * buf, int * plen, bool output) {
         int len = *plen;
         if (len > 0) {
@@ -190,7 +190,7 @@ public:
                     LOG(INFO) << (output ? "SEND >>>>>>>>>>>>>>>>" : "RECV <<<<<<<<<<<<<<<<") << " : " << time_string;
                 }
             }
-            
+
             bool indent;
             int start = 0, nest = 3;
             for (int i = 0; i < len; i += 1) {
@@ -203,22 +203,22 @@ public:
                     } else {
                         indent = true;
                     }
-                    
+
                     // Output a tag
                     LOG(INFO) << std::setw(nest) << " " << std::string(buf + start, i + 1 - start);
-                    
+
                     if (indent)
                         nest += 2;
-                    
+
                     // Note if it's a PLAIN auth tag
                     if (IsAuthTag(buf + start, i + 1 - start)) {
                         censor_password_ = true;
                     }
-                    
+
                     // incr
                     start = i + 1;
                 }
-                
+
                 if (buf[i] == '<' && start < i) {
                     if (censor_password_) {
                         LOG(INFO) << std::setw(nest) << " " << "## TEXT REMOVED ##";
@@ -258,7 +258,7 @@ void KXmppThread::Init() {
 
   int32 portallocator_flags = 0;
   cricket::SignalingProtocol initial_protocol = cricket::PROTOCOL_JINGLE;
- 
+
   client_ = new GCallClient(pump_->client(), this, caps_node, caps_ver);
   client_->SetAllowLocalIps(false);
   client_->SetAutoAccept(false);
@@ -294,7 +294,6 @@ void KXmppThread::Disconnect() {
 
 void KXmppThread::HangUp() {
   LOG(INFO) << "KXmppThread::HangUp()";
-  conductor_->Close();
   Post(this, MSG_HANG_UP);
 }
 
@@ -417,6 +416,9 @@ void KXmppThread::OnMessage(talk_base::Message* pmsg) {
     if(client_){
       client_->HangUp();
     }
+    if(conductor_) {
+      conductor_->Close();
+    }
   } else if (pmsg->message_id == MSG_ANSWER_CALL){
     AnswerData *data = reinterpret_cast<AnswerData*>(pmsg->pdata);
     if(client_){
@@ -455,7 +457,7 @@ void KXmppThread::OnMessage(talk_base::Message* pmsg) {
   } else if (pmsg->message_id == MSG_REJECT_CALL){
     if(client_){
       client_->Reject();
-	  conductor_->ClearCandidates();
+      conductor_->ClearCandidates();
     }
   } else if (pmsg->message_id == MSG_RECEIVE_REJECT){
     if(client_){
