@@ -414,6 +414,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
             showDialog(0);
         }
         else {
+            VideoClient.contactList.getList().clear();
             Login(myUser, myPass, myDomain, myXMPPServer, useSSL);
             _instance.switchLayoutTo(CallLayout.CONTACT);
         }
