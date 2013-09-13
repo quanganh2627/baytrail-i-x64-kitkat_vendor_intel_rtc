@@ -42,7 +42,7 @@
 #include "gsessionmanager.h"
 #include "talk/p2p/base/sessionmessages.h"
 #include "talk/xmllite/xmlelement.h"
-#include "talk/xmpp/xmpp_constants.h"
+#include "talk/xmpp/constants.h"
 
 namespace webrtc {
 class IceCandidateInterface;

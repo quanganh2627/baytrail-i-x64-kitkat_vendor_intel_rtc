@@ -29,7 +29,7 @@
 #define TALK_P2P_CLIENT_SESSIONSENDTASK_H_
 
 #include "talk/base/common.h"
-#include "talk/xmpp/xmpp_constants.h"
+#include "talk/xmpp/constants.h"
 #include "talk/xmpp/xmppclient.h"
 #include "talk/xmpp/xmppengine.h"
 #include "talk/xmpp/xmpptask.h"

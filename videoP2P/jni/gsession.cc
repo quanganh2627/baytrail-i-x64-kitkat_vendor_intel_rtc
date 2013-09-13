@@ -31,7 +31,7 @@
 #include "talk/base/helpers.h"
 #include "talk/base/scoped_ptr.h"
 #include "talk/base/sslstreamadapter.h"
-#include "talk/xmpp/xmpp_constants.h"
+#include "talk/xmpp/constants.h"
 #include "talk/xmpp/jid.h"
 #include "talk/p2p/base/p2ptransport.h"
 

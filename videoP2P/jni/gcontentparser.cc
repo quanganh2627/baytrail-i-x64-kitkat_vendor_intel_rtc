@@ -36,7 +36,7 @@
 #include "talk/session/media/mediamessages.h"
 #include "talk/xmllite/qname.h"
 #include "talk/xmllite/xmlconstants.h"
-#include "talk/xmpp/xmpp_constants.h"
+#include "talk/xmpp/constants.h"
 #include "talk/session/media/mediasession.h"
 #include "talk/p2p/base/parsing.h"
 

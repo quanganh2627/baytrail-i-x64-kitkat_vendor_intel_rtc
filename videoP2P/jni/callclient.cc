@@ -52,7 +52,7 @@
 #include "talk/media/base/screencastid.h"
 #include "talk/media/devices/videorendererfactory.h"
 #include "talk/media/base/videorenderer.h"
-#include "talk/xmpp/xmpp_constants.h"
+#include "talk/xmpp/constants.h"
 #include "talk/xmpp/jingleinfotask.h"
 #include "talk/xmpp/pingtask.h"
 #include "talk/p2p/base/constants.h"

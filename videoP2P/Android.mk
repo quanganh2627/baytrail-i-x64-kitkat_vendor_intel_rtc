@@ -43,10 +43,13 @@ LOCAL_PROGUARD_ENABLED := disabled
 
 LOCAL_SDK_VERSION := current
 
+LOCAL_CFLAGS += -DINTEL_ANDROID
+
 include $(BUILD_PACKAGE)
 
 # ============================================================
 
+LOCAL_CFLAGS += -DINTEL_ANDROID
 # Also build all of the sub-targets under this one: the shared library.
 #include $(call all-makefiles-under,$(LOCAL_PATH))
 include $(TOP_LOCAL_PATH)/jni/ITBAndroid.mk
