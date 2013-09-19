@@ -425,9 +425,11 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
     }
 
     protected void onDestroy() {
-        // restore audio manager setting
-        _audioManager.setMode(lastAudioMode);
-        _audioManager.setSpeakerphoneOn(wasSpeakerphoneOn);
+        if (_audioManager != null) {
+          // restore audio manager setting
+          _audioManager.setMode(lastAudioMode);
+          _audioManager.setSpeakerphoneOn(wasSpeakerphoneOn);
+        }
         super.onDestroy();
         Destroy();
     }
@@ -439,17 +441,20 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
         if(isDialogShowing()) cancelDialog();
 
         if(layout==CallLayout.MAIN){
-            _audioManager.setMode(lastAudioMode);
+            if (_audioManager != null)
+              _audioManager.setMode(lastAudioMode);
             setMainLayout();
         }
         else if(layout==CallLayout.CONTACT) {
-            _audioManager.setMode(lastAudioMode);
+            if (_audioManager != null)
+              _audioManager.setMode(lastAudioMode);
             // Need to set orientation after Login as Login
             // creates the thread and Conductor object.
             setContactLayout();
         }
         else if(layout==CallLayout.INCALL) {
-            _audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+            if (_audioManager != null)
+              _audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
             usingFrontCamera = true;
             SelectCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
             StartSurface();
@@ -602,7 +607,10 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
         }
         else {
             localSurfaceLayout.removeAllViews();
-            if (localSurfaceLayout != null) {
+            if (localSurfaceView == null) {
+                Log.e(LOG_TAG, "[StartMain]: Failed to create local surface view for layout");
+            }
+            else if (localSurfaceLayout != null) {
                 Log.d(LOG_TAG, "[StartMain]: LocalSurfaceView added to Layout");
                 try {
                     localSurfaceLayout.addView(localSurfaceView);
@@ -1188,7 +1196,8 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
         @Override
             public void onReceive(Context context, Intent intent) {
                 //Log.d(TAG, "headset state received");
-                if (intent.getAction().equals(Intent.ACTION_HEADSET_PLUG)) {
+                if (_audioManager != null &&
+                    intent.getAction().equals(Intent.ACTION_HEADSET_PLUG)) {
                     int state = intent.getIntExtra("state", -1);
                     switch (state) {
                         case 0:
