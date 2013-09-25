@@ -62,10 +62,11 @@ class DummySetSessionDescriptionObserver
 
 Conductor::Conductor(KXmppThread *kxmpp_thread, GCallClient *client)
   : peer_name_(""),
+    imageOrientation_(0),
     kxmpp_thread_(kxmpp_thread),
     client_(client),
     iceservers_(NULL),
-    imageOrientation_(0) {
+    capturer_(NULL) {
   LOG(INFO) << "Conductor::Conductor ctor";
 }
 
@@ -220,6 +221,7 @@ void Conductor::DeletePeerConnection() {
   client_->StopRemoteRenderer();
   peer_connection_factory_ = NULL;
   peer_name_ = "";
+  capturer_ = NULL;
 }
 
 //
@@ -349,11 +351,11 @@ void Conductor::AddStreams(bool video, bool audio) {
 
   if(video) {
     LOG(LS_INFO) << "Adding video track";
+    capturer_ = OpenVideoCaptureDevice();
     talk_base::scoped_refptr<webrtc::VideoTrackInterface> video_track(
       peer_connection_factory_->CreateVideoTrack(
           kVideoLabel,
-          peer_connection_factory_->CreateVideoSource(OpenVideoCaptureDevice(),
-                                                      NULL)));
+          peer_connection_factory_->CreateVideoSource(capturer_, NULL)));
     client_->StartLocalRenderer(video_track);
     stream->AddTrack(video_track);
   }
