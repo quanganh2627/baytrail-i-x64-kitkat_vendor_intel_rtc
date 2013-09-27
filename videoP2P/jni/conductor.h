@@ -47,6 +47,7 @@ class VideoCaptureModule;
 
 namespace cricket {
 class VideoRenderer;
+struct VideoFormat;
 }  // namespace cricket
 
 class KXmppThread;
@@ -73,6 +74,16 @@ class MediaConstraints : public webrtc::MediaConstraintsInterface {
   void SetMedia(bool video, bool audio) {
     AddMandatory(MediaConstraintsInterface::kOfferToReceiveVideo, video);
     AddMandatory(MediaConstraintsInterface::kOfferToReceiveAudio, audio);
+  }
+
+  void SetVideoMinResolution(int minWidth, int minHeight) {
+    AddMandatory(MediaConstraintsInterface::kMinWidth, minWidth);
+    AddMandatory(MediaConstraintsInterface::kMinHeight, minHeight);
+  }
+
+  void SetVideoMaxResolution(int maxWidth, int maxHeight) {
+    AddMandatory(MediaConstraintsInterface::kMaxWidth, maxWidth);
+    AddMandatory(MediaConstraintsInterface::kMaxHeight, maxHeight);
   }
 
  private:
@@ -143,6 +154,7 @@ class Conductor
  protected:
   // Send a message to the remote peer.
   void SendMessage(const std::string& json_object);
+  void GetMaxVideoResolution(int* width, int* height);
 
   std::string peer_name_;
   talk_base::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
@@ -164,6 +176,7 @@ class Conductor
   const webrtc::PeerConnectionInterface::IceServers *iceservers_;
   std::vector<const webrtc::IceCandidateInterface*> candidate_queue_;
   cricket::VideoCapturer *capturer_;
+  const std::vector<cricket::VideoFormat>* supported_formats_;
 };
 
 #endif  // PEERCONNECTION_SAMPLES_CLIENT_CONDUCTOR_H_

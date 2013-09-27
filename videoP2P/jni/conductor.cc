@@ -40,6 +40,12 @@
 #include "talk/app/webrtc/videosourceinterface.h"
 #include "talk/media/webrtc/webrtcvideocapturer.h"
 #include "third_party/webrtc/video_engine/include/vie_base.h"
+#include "talk/session/media/mediasession.h"
+#include "talk/media/base/codec.h"
+#include "talk/p2p/base/sessiondescription.h"
+#include "webrtc/config/session_prefs.h"
+
+using webrtc::SessionPrefs;
 
 class DummySetSessionDescriptionObserver
     : public webrtc::SetSessionDescriptionObserver {
@@ -66,7 +72,8 @@ Conductor::Conductor(KXmppThread *kxmpp_thread, GCallClient *client)
     kxmpp_thread_(kxmpp_thread),
     client_(client),
     iceservers_(NULL),
-    capturer_(NULL) {
+    capturer_(NULL), 
+    supported_formats_(NULL) {
   LOG(INFO) << "Conductor::Conductor ctor";
 }
 
@@ -106,6 +113,7 @@ void Conductor::SetCamera(int deviceId, std::string &deviceUniqueName, std::stri
     LOG(INFO) << "Conductor::SetCamera creating Device for " << package_name_;
     cricket::Device dev(camera_name_, camera_id_, package_name_);
     capturer_->SwitchCamera(dev, imageOrientation_);
+    supported_formats_ = capturer_->GetSupportedFormats();
   }
 
   stream->Release();
@@ -222,6 +230,7 @@ void Conductor::DeletePeerConnection() {
   peer_connection_factory_ = NULL;
   peer_name_ = "";
   capturer_ = NULL;
+  supported_formats_ = NULL;
 }
 
 //
@@ -352,10 +361,16 @@ void Conductor::AddStreams(bool video, bool audio) {
   if(video) {
     LOG(LS_INFO) << "Adding video track";
     capturer_ = OpenVideoCaptureDevice();
+    supported_formats_ = capturer_->GetSupportedFormats();
+    int width = 0;
+    int height = 0;
+    GetMaxVideoResolution(&width, &height);
+    MediaConstraints constraint;
+    constraint.SetVideoMaxResolution(width, height);
     talk_base::scoped_refptr<webrtc::VideoTrackInterface> video_track(
       peer_connection_factory_->CreateVideoTrack(
           kVideoLabel,
-          peer_connection_factory_->CreateVideoSource(capturer_, NULL)));
+          peer_connection_factory_->CreateVideoSource(capturer_, &constraint)));
     client_->StartLocalRenderer(video_track);
     stream->AddTrack(video_track);
   }
@@ -378,6 +393,7 @@ void Conductor::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
 
   peer_connection_->SetLocalDescription(
       DummySetSessionDescriptionObserver::Create(), desc);
+  //TODO: Should wait observer OnSuccess, then send offer/answer?
   if (client_->IsIncomingCall()) {
     LOG(INFO) << "Conductor::OnSuccess SendAccept";
     kxmpp_thread_->SendAccept(desc->description()->Copy());
@@ -417,6 +433,7 @@ void Conductor::ReceiveAccept(const cricket::SessionDescription* desc) {
     LOG(LS_ERROR) << "Failed to create session_description";
     return;
   }
+  //TODO: What if remote doesn't support the video resolution that we sent in offer?
   peer_connection_->SetRemoteDescription(
       DummySetSessionDescriptionObserver::Create(), session_description);
 }
@@ -432,4 +449,57 @@ void Conductor::UpdateIceServers(const webrtc::PeerConnectionInterface::IceServe
 void Conductor::ClearCandidates() {
   LOG(INFO) << "Conductor::ClearCandidates";
   candidate_queue_.clear();
+}
+
+void Conductor::GetMaxVideoResolution(int* width, int* height) {
+  if(client_->IsIncomingCall()) {
+    //Get desired resolution from JSEP message
+    cricket::SessionDescription* sdp = client_->GetSession()->remote_description();
+    cricket::ContentInfos cis = sdp->contents();
+    for(int i=0; i<cis.size(); i++) {
+      cricket::ContentInfo ci = cis[i];
+      const cricket::MediaContentDescription* media = static_cast<const cricket::MediaContentDescription*>(ci.description);
+      if(media->type()!=cricket::MEDIA_TYPE_VIDEO) continue;
+
+      const cricket::VideoContentDescription* video = static_cast<const cricket::VideoContentDescription*>(media);
+      for (cricket::VideoCodecs::const_iterator codec = video->codecs().begin();
+          codec != video->codecs().end(); ++codec) {
+        LOG(INFO) << "Conductor::GetMaxVideoResolution remote support: " << codec->ToString();
+        *width = codec->width;
+        *height = codec->height;
+        //TODO: If there are multiple codecs, still choose first available one?
+        break;
+      }
+    }
+  } else {
+    //Get largest supported resolution from camera
+    unsigned int minWidth = SessionPrefs::Get(SessionPrefs::MinWidth);
+    unsigned int minHeight = SessionPrefs::Get(SessionPrefs::MinHeight);
+    unsigned int maxWidth = SessionPrefs::Get(SessionPrefs::MaxWidth);
+    unsigned int maxHeight = SessionPrefs::Get(SessionPrefs::MaxHeight);
+    unsigned int desiredWidth = SessionPrefs::Get(SessionPrefs::DefaultWidth);
+    unsigned int desiredHeight = SessionPrefs::Get(SessionPrefs::DefaultHeight);
+
+    int betterDistance = INT_MAX;
+
+    int w = 0;
+    int h = 0;
+    for(int i=0; i<supported_formats_->size(); i++) {
+      const cricket::VideoFormat &f = supported_formats_->at(i);
+      if( ((f.width < minWidth && f.height < minHeight) || (f.width < minHeight && f.height < minWidth))
+         || ( !((f.width <= maxWidth && f.height <= maxHeight) || (f.width <= maxHeight && f.height <= maxWidth)) ) )
+        continue;
+
+      int distance = std::abs( (f.width*f.height)-(int)(desiredWidth*desiredHeight) );
+      if(distance < betterDistance) {
+        w = f.width;
+        h = f.height;
+        betterDistance = distance;
+      }
+    }
+
+    *width = w;
+    *height = h;
+    LOG(INFO) << "Conductor::GetMaxVideoResolution camera support: " << w << "x" << h;
+  }
 }
