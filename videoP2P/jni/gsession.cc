@@ -719,7 +719,8 @@ void GSession::OnMessage(talk_base::Message* pmsg) {
 
   switch (pmsg->message_id) {
   case MSG_ERROR:
-    TerminateWithReason(STR_TERMINATE_ERROR);
+    // On session error, pretend we receive terminate to perform complete hangup
+    SetState(STATE_RECEIVEDTERMINATE);
     break;
 
   case MSG_STATE:

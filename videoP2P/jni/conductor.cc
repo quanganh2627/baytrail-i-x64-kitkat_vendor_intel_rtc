@@ -239,7 +239,8 @@ void Conductor::DeletePeerConnection() {
 
 void Conductor::OnError() {
   LOG(LS_ERROR) << __FUNCTION__;
-  // TODO: (khanh) report error to UI
+  cricket::GSession* session = client_->GetSession();
+  session->signaling_thread()->Post(session, cricket::BaseGSession::MSG_ERROR);
 }
 
 // Called when a remote stream is added
