@@ -1239,9 +1239,11 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
                 //update login button
                 _instance.switchLayoutTo(CallLayout.MAIN);
             } else if(_instance.currentLayout==CallLayout.CONTACT) {
-                //update dial button
-                _instance.switchLayoutTo(CallLayout.CONTACT);
-                if(!conn) VideoClient.contactList.getList().clear();
+                if(!conn) {
+                     //to login layout, because XMPP already disconnected
+                     _instance.switchLayoutTo(CallLayout.MAIN);
+                     VideoClient.contactList.getList().clear();
+                }
             } else if(_instance.currentLayout==CallLayout.INCALL) {
                 if(conn) {
                     mHandler.removeCallbacks(cancelCallTask);
