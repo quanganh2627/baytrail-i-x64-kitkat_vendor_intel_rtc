@@ -217,7 +217,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
     private static final int INIT_BITRATE = 400;
     private static Handler mHandler;
     private LayoutInflater inflater;
-    private native int SetCamera(int deviceId, String deviceUniqueStr, String packageName);
+    private native int SetCamera(int deviceId, String deviceUniqueStr);
     private native int SetImageOrientation(int degrees);
     private native int SetRemoteSurfaceView(SurfaceView surface);
     private native int SetRemoteSurface(Object glSurface);
@@ -280,7 +280,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
         }
         contactList = new ContactList();
         callDialog = new ProgressDialog(this);
-        m_Settings = new Settings(this,IsTestModeActive()); 
+        m_Settings = new Settings(this,IsTestModeActive());
 
         //Without this, audio record buffer was not being emptied as fast as it was filled.
         //We probably only want to do this when a call is actually happening.
@@ -482,7 +482,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
         }
 
 //        SetImageOrientation(info.orientation);
-        SetCamera(cameraId, cameraUniqueName, mContext.getPackageName());
+        SetCamera(cameraId, cameraUniqueName);
     }
     private void setMainLayout() {
         setContentView(R.layout.mainview);
@@ -554,7 +554,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
                 }
         });
 
-        Button videoonly_callButton = (Button)findViewById(R.id.callbutton_videoonly); 
+        Button videoonly_callButton = (Button)findViewById(R.id.callbutton_videoonly);
         videoonly_callButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View arg0) {
@@ -565,7 +565,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
                 }
                 });
 
-        Button audioonly_callButton = (Button)findViewById(R.id.callbutton_audioonly); 
+        Button audioonly_callButton = (Button)findViewById(R.id.callbutton_audioonly);
         audioonly_callButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View arg0) {

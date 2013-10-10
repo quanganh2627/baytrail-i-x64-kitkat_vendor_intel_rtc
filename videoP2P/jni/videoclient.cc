@@ -26,14 +26,6 @@
 #include "third_party/webrtc/system_wrappers/interface/thread_wrapper.h"
 
 #include "third_party/webrtc/voice_engine/include/voe_base.h"
-//#include "voe_codec.h"
-//#include "voe_file.h"
-//#include "voe_network.h"
-//#include "voe_audio_processing.h"
-//#include "voe_volume_control.h"
-//#include "voe_hardware.h"
-//#include "voe_rtp_rtcp.h"
-//#include "voe_encryption.h"
 
 //start of includes for login
 #include "talk/base/logging.h"
@@ -54,11 +46,6 @@
 #include "third_party/webrtc/modules/video_capture/android/video_capture_android.h"
 
 #include "third_party/webrtc/video_engine/include/vie_base.h"
-//#include "vie_codec.h"
-//#include "vie_capture.h"
-//#include "vie_network.h"
-//#include "vie_render.h"
-//#include "vie_rtp_rtcp.h"
 
 #if LOGGING
 #define LOG_TAG "c-libjingle-VideoClient" // As in WEBRTC Native...
@@ -387,13 +374,12 @@ void Terminate(){
 }
 
 JNIEXPORT jint JNICALL Java_org_webrtc_videoP2P_VideoClient_SetCamera
-  (JNIEnv * env, jobject, jint deviceId, jstring deviceUniqueName, jstring packageName)
+  (JNIEnv * env, jobject, jint deviceId, jstring deviceUniqueName)
 {
   std::string s = env->GetStringUTFChars(deviceUniqueName, NULL);
-  std::string pack = env->GetStringUTFChars(packageName, NULL);
   if ( xmpp_thread_ ) {
-    LOGI("SetCamera(%d, %s, %s)", deviceId, s.c_str(), pack.c_str());
-    xmpp_thread_->SetCamera(deviceId, s, pack);
+    LOGI("SetCamera(%d, %s)", deviceId, s.c_str());
+    xmpp_thread_->SetCamera(deviceId, s);
   }
   return 0;
 }

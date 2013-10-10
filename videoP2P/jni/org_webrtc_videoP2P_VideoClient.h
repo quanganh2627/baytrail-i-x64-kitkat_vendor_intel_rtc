@@ -71,7 +71,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoP2P_VideoClient_SetRemoteSurface(
     JNIEnv *, jobject, jobject);
 
 JNIEXPORT jint JNICALL Java_org_webrtc_videoP2P_VideoClient_SetCamera
-  (JNIEnv *, jobject, jint, jstring, jstring);
+  (JNIEnv *, jobject, jint, jstring);
 
 JNIEXPORT jint JNICALL Java_org_webrtc_videoP2P_VideoClient_SetImageOrientation
   (JNIEnv *, jobject, jint);

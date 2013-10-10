@@ -72,7 +72,7 @@ Conductor::Conductor(KXmppThread *kxmpp_thread, GCallClient *client)
     kxmpp_thread_(kxmpp_thread),
     client_(client),
     iceservers_(NULL),
-    capturer_(NULL), 
+    capturer_(NULL),
     supported_formats_(NULL) {
   LOG(INFO) << "Conductor::Conductor ctor";
 }
@@ -89,9 +89,7 @@ bool Conductor::connection_active() const {
   return peer_connection_.get() != NULL;
 }
 
-void Conductor::SetCamera(int deviceId, std::string &deviceUniqueName, std::string &packageName) {
-  LOG(INFO) << "Conductor::SetCamera " << packageName;
-  package_name_ = packageName;
+void Conductor::SetCamera(int deviceId, std::string &deviceUniqueName) {
   camera_id_ = deviceId;
   camera_name_ = deviceUniqueName;
   std::map<std::string, talk_base::scoped_refptr<webrtc::MediaStreamInterface> >::iterator it
@@ -110,8 +108,7 @@ void Conductor::SetCamera(int deviceId, std::string &deviceUniqueName, std::stri
   if (!tracks.empty()) {
     webrtc::VideoTrackInterface* track = tracks[0];
     capturer_ = (cricket::VideoCapturer*)track->GetSource()->GetVideoCapturer();
-    LOG(INFO) << "Conductor::SetCamera creating Device for " << package_name_;
-    cricket::Device dev(camera_name_, camera_id_, package_name_);
+    cricket::Device dev(camera_name_, camera_id_);
     capturer_->SwitchCamera(dev, imageOrientation_);
     supported_formats_ = capturer_->GetSupportedFormats();
   }
@@ -347,8 +344,7 @@ cricket::VideoCapturer* Conductor::OpenVideoCaptureDevice() {
     LOG(LS_ERROR) << "Can't create device manager";
     return NULL;
   }
-  cricket::Device dev(camera_name_, camera_id_, package_name_);
-//MR1:  cricket::Device dev(camera_name_, camera_id_);
+  cricket::Device dev(camera_name_, camera_id_);
 
   cricket::VideoCapturer* capturer = dev_manager->CreateVideoCapturer(dev);
 
