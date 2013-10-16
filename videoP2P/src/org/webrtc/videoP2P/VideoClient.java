@@ -297,6 +297,7 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
         } else {
             lastAudioMode = _audioManager.getMode();
             wasSpeakerphoneOn = _audioManager.isSpeakerphoneOn();
+            _audioManager.setMode(AudioManager.MODE_NORMAL);
             _audioManager.setSpeakerphoneOn(true);
         }
 
@@ -441,20 +442,14 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
         if(isDialogShowing()) cancelDialog();
 
         if(layout==CallLayout.MAIN){
-            if (_audioManager != null)
-              _audioManager.setMode(lastAudioMode);
             setMainLayout();
         }
         else if(layout==CallLayout.CONTACT) {
-            if (_audioManager != null)
-              _audioManager.setMode(lastAudioMode);
             // Need to set orientation after Login as Login
             // creates the thread and Conductor object.
             setContactLayout();
         }
         else if(layout==CallLayout.INCALL) {
-            if (_audioManager != null)
-              _audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
             usingFrontCamera = true;
             SelectCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
             StartSurface();
