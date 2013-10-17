@@ -181,6 +181,19 @@ bool Conductor::InitializePeerConnection(bool video, bool audio) {
   ASSERT(peer_connection_factory_.get() == NULL);
   ASSERT(peer_connection_.get() == NULL);
 
+  MediaConstraints constraint;
+  MediaConstraints* constraintPtr = NULL;
+
+  if(video) {
+    capturer_ = OpenVideoCaptureDevice();
+    supported_formats_ = capturer_->GetSupportedFormats();
+    int width = 0;
+    int height = 0;
+    GetMaxVideoResolution(&width, &height);
+    constraint.SetVideoMaxResolution(width, height);
+    constraintPtr = &constraint;
+  }
+
   peer_connection_factory_  = webrtc::CreatePeerConnectionFactory();
 #if 1 // enable NativeWindow
   webrtc::VideoEngine::SetRemoteSurface(GetRemoteSurface());
@@ -200,7 +213,7 @@ bool Conductor::InitializePeerConnection(bool video, bool audio) {
     server.uri = GetPeerConnectionString();
     servers.push_back(server);
     peer_connection_ = peer_connection_factory_->CreatePeerConnection(servers,
-                                                                    NULL,
+                                                                    constraintPtr,
                                                                     this);
   } else {
     webrtc::PeerConnectionInterface::IceServers::const_iterator iter;
@@ -209,7 +222,7 @@ bool Conductor::InitializePeerConnection(bool video, bool audio) {
     }
 
     peer_connection_ = peer_connection_factory_->CreatePeerConnection(*iceservers_,
-                                                                    NULL,
+                                                                    constraintPtr,
                                                                     this);
   }
 
@@ -361,7 +374,6 @@ void Conductor::AddStreams(bool video, bool audio) {
 
   if(video) {
     LOG(LS_INFO) << "Adding video track";
-    capturer_ = OpenVideoCaptureDevice();
     supported_formats_ = capturer_->GetSupportedFormats();
     int width = 0;
     int height = 0;
