@@ -98,7 +98,7 @@ import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.view.animation.RotateAnimation;
 
-public class VideoClient extends Activity implements SurfaceHolder.Callback {
+public class VideoClient extends Activity {
     private static boolean USE_VIDEO_ENGINE = false;
 
 
@@ -234,26 +234,6 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
     private int lastAudioMode;
     private boolean wasSpeakerphoneOn;
 
-    class CallOptions {
-        public CallOptions(String callee, boolean hasVideo, boolean hasAudio) {
-            mCallee = callee;
-            mHasAudio = hasAudio;
-            mHasVideo = hasVideo;
-        }
-
-        public void Reset(){
-            mCallee = "";
-            mHasAudio = false;
-            mHasVideo = false;
-        }
-
-        public String mCallee = null;
-        boolean mHasVideo = false;
-        boolean mHasAudio = false;
-    }
-
-    private CallOptions callOptions = null;
-
     enum CallLayout {
         MAIN,
         CONTACT,
@@ -356,9 +336,6 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
         Log.v(LOG_TAG, "Create Local Render");
         if (localSurfaceView == null) {
             Log.e(LOG_TAG, "[StartMain]: Failed to create local surface view");
-        }
-        else {
-            localSurfaceView.getHolder().addCallback(this);
         }
 
         // TODO: (khanh) add flag for switching between NativeWindow and SW Rendering
@@ -544,8 +521,8 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
                     String callee = contactList.getSelection();
                     if(TextUtils.isEmpty(callee)) return;
 
-                    callOptions = new CallOptions(callee, true, true);
                     switchLayoutTo(CallLayout.INCALL); // call is placed when surface is created
+                    PlaceCall(callee, true, true);
                 }
         });
 
@@ -555,8 +532,8 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
                 public void onClick(View arg0) {
                 String callee = contactList.getSelection();
                 if(TextUtils.isEmpty(callee)) return;
-                    callOptions = new CallOptions(callee, true, false);
                     switchLayoutTo(CallLayout.INCALL); // call is placed when surface is created
+                    PlaceCall(callee, true, false);
                 }
                 });
 
@@ -566,8 +543,8 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
                 public void onClick(View arg0) {
                 String callee = contactList.getSelection();
                 if(TextUtils.isEmpty(callee)) return;
-                    callOptions = new CallOptions(callee, false, true);
                     switchLayoutTo(CallLayout.INCALL); // call is placed when surface is created
+                    PlaceCall(callee, false, true);
                 }
                 });
 
@@ -1007,26 +984,6 @@ public class VideoClient extends Activity implements SurfaceHolder.Callback {
         usingFrontCamera = !usingFrontCamera;
         SelectCamera(usingFrontCamera ? Camera.CameraInfo.CAMERA_FACING_FRONT
                 : Camera.CameraInfo.CAMERA_FACING_BACK);
-    }
-
-    // SurfaceHolder.Callbacks
-    public void surfaceChanged(SurfaceHolder holder,
-            int format, int width, int height) {
-        Log.d(LOG_TAG, "surfaceChanged");
-    }
-
-    public void surfaceCreated(SurfaceHolder holder) {
-        Log.d(LOG_TAG, "surfaceCreated");
-        if (callOptions != null){
-            Log.d(LOG_TAG, "PlaceCall to " + callOptions.mCallee);
-            PlaceCall(callOptions.mCallee, callOptions.mHasVideo, callOptions.mHasAudio);
-            callOptions = null;
-        }
-    }
-
-    public void surfaceDestroyed(SurfaceHolder holder) {
-        Log.d(LOG_TAG, "surfaceDestroyed");
-        //isSurfaceReady = false;
     }
 
     private int getQuadrant(int orientation) {
