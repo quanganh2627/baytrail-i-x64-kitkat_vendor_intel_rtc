@@ -267,20 +267,6 @@ public class VideoClient extends Activity {
         android.os.Process.setThreadPriority(
                 android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
 
-        //If it's playing audio out of the speaker, switch this to get earpiece.
-        if (_audioManager == null) {
-            _audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        }
-
-        if (_audioManager == null) {
-            Log.e("*Webrtc*", "Could not change audio routing - no audio manager");
-        } else {
-            lastAudioMode = _audioManager.getMode();
-            wasSpeakerphoneOn = _audioManager.isSpeakerphoneOn();
-            _audioManager.setMode(AudioManager.MODE_NORMAL);
-            _audioManager.setSpeakerphoneOn(true);
-        }
-
         // Load the user credential configs from confFile
         // Warning: For real credentials, use encrypted storage
         // This is for development convenience
@@ -370,8 +356,8 @@ public class VideoClient extends Activity {
         public void onPause() {
             if (currentLayout == CallLayout.INCALL) {
                 _instance.HangUp();
-                switchLayoutTo(CallLayout.MAIN);
             }
+            switchLayoutTo(CallLayout.MAIN);
 
             unregisterReceiver(mConnectivityChangeHandler);
             unregisterReceiver(audioJackReceiver);
@@ -379,8 +365,32 @@ public class VideoClient extends Activity {
         }
 
     @Override
+        public void onStart() {
+        //If it's playing audio out of the speaker, switch this to get earpiece.
+        if (_audioManager == null) {
+            _audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        }
+
+        if (_audioManager == null) {
+            Log.e("*Webrtc*", "Could not change audio routing - no audio manager");
+        } else {
+            lastAudioMode = _audioManager.getMode();
+            wasSpeakerphoneOn = _audioManager.isSpeakerphoneOn();
+            _audioManager.setMode(AudioManager.MODE_NORMAL);
+            _audioManager.setSpeakerphoneOn(true);
+        }
+        super.onStart();
+    }
+
+    @Override
     public void onStop() {
+        if (_audioManager != null) {
+          // restore audio manager setting
+          _audioManager.setMode(lastAudioMode);
+          _audioManager.setSpeakerphoneOn(wasSpeakerphoneOn);
+        }
         super.onStop();
+        Destroy();
     }
 
     public void sendLogin(View v) {
@@ -403,13 +413,7 @@ public class VideoClient extends Activity {
     }
 
     protected void onDestroy() {
-        if (_audioManager != null) {
-          // restore audio manager setting
-          _audioManager.setMode(lastAudioMode);
-          _audioManager.setSpeakerphoneOn(wasSpeakerphoneOn);
-        }
         super.onDestroy();
-        Destroy();
     }
 
     void switchLayoutTo(CallLayout layout) {
