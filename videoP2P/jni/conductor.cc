@@ -92,28 +92,14 @@ bool Conductor::connection_active() const {
 void Conductor::SetCamera(int deviceId, std::string &deviceUniqueName) {
   camera_id_ = deviceId;
   camera_name_ = deviceUniqueName;
-  std::map<std::string, talk_base::scoped_refptr<webrtc::MediaStreamInterface> >::iterator it
-                = active_streams_.find(kStreamLabel);
 
-  if(it == active_streams_.end()) {
-    LOG(LS_ERROR) << "Stream list is empty.";
-    return;
-  }
-
-  talk_base::scoped_refptr<webrtc::MediaStreamInterface> stream = it->second;
-
-  stream->AddRef();
-
-  webrtc::VideoTrackVector tracks = stream->GetVideoTracks();
-  if (!tracks.empty()) {
-    webrtc::VideoTrackInterface* track = tracks[0];
-    capturer_ = (cricket::VideoCapturer*)track->GetSource()->GetVideoCapturer();
+  // If the capturer is NULL, OpenCapture device hasn't been called yet
+  // or it has failed, otherwise call SwitchCamera
+  if(capturer_ != NULL) {
     cricket::Device dev(camera_name_, camera_id_);
     capturer_->SwitchCamera(dev, imageOrientation_);
     supported_formats_ = capturer_->GetSupportedFormats();
   }
-
-  stream->Release();
 }
 
 void Conductor::SetImageOrientation(int degrees)
@@ -211,6 +197,7 @@ bool Conductor::InitializePeerConnection(bool video, bool audio) {
     servers.push_back(server);
     peer_connection_ = peer_connection_factory_->CreatePeerConnection(servers,
                                                                     constraintPtr,
+                                                                    NULL, /* DTLS */
                                                                     this);
   } else {
     webrtc::PeerConnectionInterface::IceServers::const_iterator iter;
@@ -220,6 +207,7 @@ bool Conductor::InitializePeerConnection(bool video, bool audio) {
 
     peer_connection_ = peer_connection_factory_->CreatePeerConnection(*iceservers_,
                                                                     constraintPtr,
+                                                                    NULL, /* DTLS */
                                                                     this);
   }
 
@@ -346,11 +334,16 @@ cricket::VideoCapturer* Conductor::OpenVideoCaptureDevice() {
   }
   cricket::Device dev(camera_name_, camera_id_);
 
-  cricket::VideoCapturer* capturer = dev_manager->CreateVideoCapturer(dev);
+  capturer_ = dev_manager->CreateVideoCapturer(dev);
 
-  //LOG(LS_INFO) << "Conductor::OpenVideoCaptureDevice() imageOrientation_=" << imageOrientation_;
-  capturer->SetCaptureRotation(imageOrientation_);
-  return capturer;
+  LOG(LS_INFO) << "Conductor::OpenVideoCaptureDevice() imageOrientation_=" << imageOrientation_;
+
+  if(capturer_ == NULL) {
+    LOG(LS_ERROR) << "Conductor::OpenVideoCaptureDevice() failed, capturer_ is NULL";
+  } else {
+    capturer_->SetCaptureRotation(imageOrientation_);
+  }
+  return capturer_;
 }
 
 void Conductor::AddStreams(bool video, bool audio) {
@@ -370,18 +363,25 @@ void Conductor::AddStreams(bool video, bool audio) {
 
   if(video) {
     LOG(LS_INFO) << "Adding video track";
-    supported_formats_ = capturer_->GetSupportedFormats();
-    int width = 0;
-    int height = 0;
-    GetMaxVideoResolution(&width, &height);
-    MediaConstraints constraint;
-    constraint.SetVideoMaxResolution(width, height);
-    talk_base::scoped_refptr<webrtc::VideoTrackInterface> video_track(
-      peer_connection_factory_->CreateVideoTrack(
-          kVideoLabel,
-          peer_connection_factory_->CreateVideoSource(capturer_, &constraint)));
-    client_->StartLocalRenderer(video_track);
-    stream->AddTrack(video_track);
+    if (capturer_ == NULL) {
+      LOG(LS_INFO) << "Capture device was not opened, opening capture device";
+      OpenVideoCaptureDevice();
+    }
+
+    if(capturer_ != NULL) {
+      supported_formats_ = capturer_->GetSupportedFormats();
+      int width = 0;
+      int height = 0;
+      GetMaxVideoResolution(&width, &height);
+      MediaConstraints constraint;
+      constraint.SetVideoMaxResolution(width, height);
+      talk_base::scoped_refptr<webrtc::VideoTrackInterface> video_track(
+        peer_connection_factory_->CreateVideoTrack(
+            kVideoLabel,
+            peer_connection_factory_->CreateVideoSource(capturer_, &constraint)));
+      client_->StartLocalRenderer(video_track);
+      stream->AddTrack(video_track);
+    }
   }
 
   if (!peer_connection_->AddStream(stream, NULL)) {

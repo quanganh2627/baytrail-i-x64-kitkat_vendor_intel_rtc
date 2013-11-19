@@ -222,8 +222,12 @@ bool GSession::SendCandidate(const webrtc::IceCandidateInterface* candidate) {
   std::string content_name(NS_JINGLE_ICE_UDP);
   Candidates candidates;
   candidates.push_back(candidate->candidate());
-  TransportInfo tinfo(candidate->sdp_mid(),
-      TransportDescription(content_name, candidates));
+
+  TransportDescription tdesc;
+  tdesc.candidates = candidates;
+  tdesc.transport_type = content_name;
+
+  TransportInfo tinfo(candidate->sdp_mid(), tdesc);
 
   SessionError error;
   if (!SendTransportInfoMessage(tinfo, &error)) {
@@ -345,9 +349,12 @@ TransportInfos GSession::GetEmptyTransportInfos(
   TransportInfos tinfos;
   for (ContentInfos::const_iterator content = contents.begin();
        content != contents.end(); ++content) {
+    TransportDescription tdesc;
+    tdesc.candidates = Candidates();
+    tdesc.transport_type = transport_type();
+
     tinfos.push_back(
-        TransportInfo(content->name,
-            TransportDescription(transport_type(), Candidates())));
+        TransportInfo(content->name, tdesc));
   }
   return tinfos;
 }

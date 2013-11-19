@@ -91,7 +91,6 @@ static JNIEnv *gRenderEnv=NULL;
 static JNIEnv *gSizeEnv=NULL;
 extern JavaVM *gJavaVM;
 static jobject gContext;
-cricket::MediaEngineInterface* mediaEngineObj_ = NULL;
 
 JNIEXPORT jint JNICALL Java_org_webrtc_videoP2P_VideoClient_SetRemoteSurfaceView(
     JNIEnv *env, jobject context, jobject remoteSurface)
@@ -116,19 +115,6 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoP2P_VideoClient_SetRemoteSurface(
 }
 void* GetRemoteSurface() { return remoteSurface_; }
 
-JNIEXPORT jint JNICALL Java_org_webrtc_videoP2P_VideoClient_SetLocalViewRotation(
-    JNIEnv *,
-    jobject,
-    jint degrees)
-{
-  LOG(INFO) << "SetLocalViewRotation to " << degrees;
-  int ret = 0;
-  if (mediaEngineObj_) {
-    ret = mediaEngineObj_->SetCaptureRotation(degrees);
-  }
-  return ret;
-}
-
 pthread_mutex_t GCallClient::mutex_ = PTHREAD_MUTEX_INITIALIZER;
 
 GCallClient::GCallClient(buzz::XmppClient* xmpp_client, KXmppThread* kxmpp_thread,
@@ -148,7 +134,6 @@ GCallClient::GCallClient(buzz::XmppClient* xmpp_client, KXmppThread* kxmpp_threa
   xmpp_client_->SignalStateChange.connect(this, &GCallClient::OnStateChange);
   my_status_.set_caps_node(caps_node);
   my_status_.set_version(version);
-  mediaEngineObj_ = NULL;
 
   y_plane_ = NULL;
   u_plane_ = NULL;
@@ -174,7 +159,6 @@ GCallClient::~GCallClient() {
   //delete presence_out_;
   //delete friend_invite_send_;
   delete roster_;
-  mediaEngineObj_ = NULL;
 }
 
 #ifdef LOGGING

@@ -41,7 +41,6 @@
 #include "talk/examples/call/console.h"
 
 #include "third_party/webrtc/common_types.h"
-#include "third_party/webrtc/video_engine/include/vie_file.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
 
 class KXmppThread;
@@ -234,9 +233,6 @@ class GCallClient: public sigslot::has_slots<> {
   void PrintDevices(const std::vector<std::string>& names);
 
   void SetVolume(const std::string& level);
-
-  bool StartRecordOutgoingVideo(const webrtc::FileFormats file_format,
-				webrtc::AudioSource audio_source);
 
   typedef std::map<std::string, RosterItem> RosterMap;
 
