@@ -19,6 +19,7 @@
 
 # Modified from development/samples/SimpleJNI/Android.mk
 
+ifeq ($(ENABLE_WEBRTC),true)
 TOP_LOCAL_PATH:= $(call my-dir)
 
 # Build activity
@@ -53,3 +54,4 @@ LOCAL_CFLAGS += -DINTEL_ANDROID
 # Also build all of the sub-targets under this one: the shared library.
 #include $(call all-makefiles-under,$(LOCAL_PATH))
 include $(TOP_LOCAL_PATH)/jni/ITBAndroid.mk
+endif # ENABLE_WEBRTC
