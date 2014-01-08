@@ -125,12 +125,12 @@ GCallClient::GCallClient(buzz::XmppClient* xmpp_client, KXmppThread* kxmpp_threa
       auto_accept_(false),
       render_(true),
       data_channel_enabled_(false),
-      local_renderer_(NULL),
-      remote_renderer_(NULL),
       roster_(new RosterMap),
       portallocator_flags_(0),
       allow_local_ips_(false),
-      initial_protocol_(cricket::PROTOCOL_JINGLE) {
+      initial_protocol_(cricket::PROTOCOL_JINGLE),
+      local_renderer_(NULL),
+      remote_renderer_(NULL) {
   xmpp_client_->SignalStateChange.connect(this, &GCallClient::OnStateChange);
   my_status_.set_caps_node(caps_node);
   my_status_.set_version(version);
@@ -224,7 +224,7 @@ const short GCallClient::strerrorcode(buzz::XmppEngine::Error err) {
 void GCallClient::StartLocalRenderer(webrtc::VideoTrackInterface* local_video) {
   LOG(INFO) << "GCallClient::StartLocalRenderer";
   VideoRenderer *render = new VideoRenderer(this, local_video, VideoRenderer::LOCAL);
-  local_renderer_.reset(render);    
+  local_renderer_.reset(render);
 }
 
 void GCallClient::StartRemoteRenderer(webrtc::VideoTrackInterface* remote_video) {
@@ -253,11 +253,16 @@ void GCallClient::OnStateChange(buzz::XmppEngine::State state) {
     callback_handler(videoP2P::XMPPENGINE_CALLBACK, videoP2P::XMPPENGINE_OPEN);
     break;
 
+  case buzz::XmppEngine::STATE_NONE:
+    LOG(INFO) << "state set to none.";
+    break;
+
   case buzz::XmppEngine::STATE_CLOSED:
     buzz::XmppEngine::Error error = xmpp_client_->GetError(NULL);
     LOG(INFO) <<"logged out... " << strerror(error).c_str();
     callback_handler(videoP2P::XMPPENGINE_CALLBACK, videoP2P::XMPPENGINE_CLOSED);
     callback_handler(videoP2P::XMPPERROR_CALLBACK, strerrorcode(error));
+    break;
   }
 }
 
@@ -296,7 +301,15 @@ std::string GCallClient::GetCaller(){
   }
   return toReturn;
 }
-  
+
+void GCallClient::SetVideoRendererRotation(int deg) {
+  pthread_mutex_lock(&mutex_);
+  if(remote_renderer_.get() != NULL) {
+    remote_renderer_->SetVideoRendererRotation(deg);
+  }
+  pthread_mutex_unlock(&mutex_);
+}
+
 void GCallClient::SendCandidate(const webrtc::IceCandidateInterface* candidate) {
   LOG(INFO) <<"GCallClient::SendCandidate";
   if (session_) {
@@ -422,7 +435,7 @@ void GCallClient::OnStatusUpdate(const buzz::PresenceStatus& status) {
 
   } else {
     RosterMap::iterator iter = roster_->find(key);
-    if (iter != roster_->end())
+    if (iter != roster_->end()) {
       if(kxmpp_thread_->IsCalling()) {
         LOG(INFO) <<"Calling... Skip removing roster";
         iter->second.pendingRemoval = true;
@@ -432,6 +445,7 @@ void GCallClient::OnStatusUpdate(const buzz::PresenceStatus& status) {
         roster_->erase(iter);
         callback_handler_ext(videoP2P::PRESENCE_STATE_CALLBACK, videoP2P::CALL_PRESENCE_DROPPED, key.c_str());
       }
+    }
   }
 }
 
@@ -585,9 +599,11 @@ GCallClient::VideoRenderer::VideoRenderer(GCallClient* client,
     webrtc::VideoTrackInterface* track, VideoRenderer::RenderType type) :
     width_(0),
     height_(0),
+    type_(type),
     client_(client),
     rendered_track_(track),
-    type_(type){
+    direct_render_config_(NULL),
+    rotation_deg_(0) {
   LOG(INFO) << "VideoRenderer::" << __FUNCTION__ << " name=" << (type_?"remote":"local");
   rendered_track_->AddRenderer(this);
 }
@@ -608,7 +624,7 @@ void GCallClient::VideoRenderer::SetSize(int width, int height) {
 
   pthread_mutex_lock(&client_->mutex_);
 
-  if ( isAttached == false ) { 
+  if ( isAttached == false ) {
     if( gJavaVM->AttachCurrentThread(&gSizeEnv, NULL) < 0 ) {
       goto done;
     }
@@ -690,4 +706,20 @@ void GCallClient::VideoRenderer::RenderFrame(const cricket::VideoFrame* frame) {
 
 render_done:
   pthread_mutex_unlock(&client_->mutex_);
+}
+
+void GCallClient::VideoRenderer::SetDirectRenderConfig(webrtc::DirectRenderConfig *config)
+{
+  pthread_mutex_lock(&client_->mutex_);
+  direct_render_config_ = config;
+  SetVideoRendererRotation(rotation_deg_);
+  pthread_mutex_unlock(&client_->mutex_);
+}
+
+void GCallClient::VideoRenderer::SetVideoRendererRotation(int deg)
+{
+  if(direct_render_config_ != NULL) {
+    direct_render_config_->changeOrientation(deg, true);
+  }
+  rotation_deg_ = deg;
 }

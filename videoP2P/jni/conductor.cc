@@ -107,6 +107,7 @@ void Conductor::SetImageOrientation(int degrees)
   if(imageOrientation_!=degrees) {
     LOG(INFO) << "Conductor::SetImageOrientation " << degrees << ", capturer_:" << capturer_;
     if(capturer_) capturer_->SetCaptureRotation(degrees);
+    if(client_) client_->SetVideoRendererRotation(degrees);
     imageOrientation_ = degrees;
   }
 }
@@ -168,13 +169,17 @@ bool Conductor::InitializePeerConnection(bool video, bool audio) {
   MediaConstraints* constraintPtr = NULL;
 
   if(video) {
-    capturer_ = OpenVideoCaptureDevice();
-    supported_formats_ = capturer_->GetSupportedFormats();
-    int width = 0;
-    int height = 0;
-    GetMaxVideoResolution(&width, &height);
-    constraint.SetVideoMaxResolution(width, height);
-    constraintPtr = &constraint;
+    OpenVideoCaptureDevice();
+    if(capturer_ != NULL) {
+      supported_formats_ = capturer_->GetSupportedFormats();
+      int width = 0;
+      int height = 0;
+      GetMaxVideoResolution(&width, &height);
+      constraint.SetVideoMaxResolution(width, height);
+      constraintPtr = &constraint;
+    } else {
+      LOG(LS_ERROR) << "Failed to open video capturer";
+    }
   }
 
   peer_connection_factory_  = webrtc::CreatePeerConnectionFactory();
@@ -325,6 +330,10 @@ void Conductor::OnInitiateMessage(bool video, bool audio)
 }
 
 cricket::VideoCapturer* Conductor::OpenVideoCaptureDevice() {
+  if(capturer_ != NULL) {
+    return capturer_;
+  }
+
   LOG(INFO) << "OpenVideoCaptureDevice, camera_id=" << camera_id_ << ", camera name=" << camera_name_;
   talk_base::scoped_ptr<cricket::DeviceManagerInterface> dev_manager(
       cricket::DeviceManagerFactory::Create());
@@ -381,6 +390,8 @@ void Conductor::AddStreams(bool video, bool audio) {
             peer_connection_factory_->CreateVideoSource(capturer_, &constraint)));
       client_->StartLocalRenderer(video_track);
       stream->AddTrack(video_track);
+    } else {
+      LOG(LS_ERROR) << "Failed to open capture device.";
     }
   }
 

@@ -172,6 +172,8 @@ class GCallClient: public sigslot::has_slots<> {
     remote_cap_audio_ = audio;
   }
 
+  void SetVideoRendererRotation(int deg);
+
   jbyte **y_plane_;
   jbyte **u_plane_;
   jbyte **v_plane_;
@@ -276,6 +278,9 @@ protected:
 
     virtual void SetSize(int width, int height);
     virtual void RenderFrame(const cricket::VideoFrame* frame);
+    virtual void SetDirectRenderConfig(webrtc::DirectRenderConfig *config);
+
+    void SetVideoRendererRotation(int deg);
 
     int width() const {
       return width_;
@@ -290,6 +295,8 @@ protected:
     RenderType type_;
     GCallClient *client_;
     talk_base::scoped_refptr<webrtc::VideoTrackInterface> rendered_track_;
+    webrtc::DirectRenderConfig *direct_render_config_;
+    int rotation_deg_;
   };
 
   talk_base::scoped_ptr<VideoRenderer> local_renderer_;
