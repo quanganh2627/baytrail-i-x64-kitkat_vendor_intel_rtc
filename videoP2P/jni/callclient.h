@@ -180,7 +180,7 @@ class GCallClient: public sigslot::has_slots<> {
   int index_;
   int count_;
   bool buffer_initialized_;
-  static pthread_mutex_t mutex_;
+  pthread_mutex_t mutex_;
 
  private:
   void AddStream(uint32 audio_src_id, uint32 video_src_id);

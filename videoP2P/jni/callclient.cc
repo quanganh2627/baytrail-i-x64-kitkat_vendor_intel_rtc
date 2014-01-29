@@ -115,8 +115,6 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoP2P_VideoClient_SetRemoteSurface(
 }
 void* GetRemoteSurface() { return remoteSurface_; }
 
-pthread_mutex_t GCallClient::mutex_ = PTHREAD_MUTEX_INITIALIZER;
-
 GCallClient::GCallClient(buzz::XmppClient* xmpp_client, KXmppThread* kxmpp_thread,
                        const std::string& caps_node, const std::string& version)
     : xmpp_client_(xmpp_client),
@@ -141,6 +139,7 @@ GCallClient::GCallClient(buzz::XmppClient* xmpp_client, KXmppThread* kxmpp_threa
   index_ = 0;
   count_ = 0;
   buffer_initialized_ = false;
+  pthread_mutex_init(&mutex_, NULL);
 }
 
 GCallClient::~GCallClient() {
@@ -649,7 +648,6 @@ void GCallClient::VideoRenderer::SetSize(int width, int height) {
 
 done:
   pthread_mutex_unlock(&client_->mutex_);
-
 }
 
 void GCallClient::VideoRenderer::RenderFrame(const cricket::VideoFrame* frame) {
