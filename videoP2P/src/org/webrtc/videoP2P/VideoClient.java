@@ -206,7 +206,8 @@ public class VideoClient extends Activity {
     private OrientationEventListener orientationListener;
     int currentOrientation = OrientationEventListener.ORIENTATION_UNKNOWN;
     int currentCameraOrientation = 0;
-    private int currentQuadrant = 0;
+    private int currentQuadrant = -1;
+    private final int rotationThreshold = 67;
 
     private int codecType = 0;
     private int codecSizeWidth = 352;
@@ -303,7 +304,7 @@ public class VideoClient extends Activity {
             new OrientationEventListener(this,SensorManager.SENSOR_DELAY_UI) {
                 public void onOrientationChanged (int orientation) {
                     //Log.d(LOG_TAG,"onOrientationChanged("+orientation+")");
-                    if (currentLayout==CallLayout.INCALL)  {
+                    if(currentLayout==CallLayout.INCALL){
                         if (orientation != ORIENTATION_UNKNOWN) {
                             currentOrientation = orientation;
                             int quadrant = getQuadrant(orientation);
@@ -754,6 +755,8 @@ public class VideoClient extends Activity {
                 callDialog.setMessage("Call Rejected.");
                 break;
             case VideoClient.CALL_INPROGRESS:
+                SetImageOrientation(currentQuadrant * 90);
+                setQuadrant(currentQuadrant);
                 break;
             case VideoClient.CALL_RECIVEDTERMINATE:
                 if(mInComingDialog!=null && mInComingDialog.isShowing()) {
@@ -991,16 +994,53 @@ public class VideoClient extends Activity {
     }
 
     private int getQuadrant(int orientation) {
-        int quadrant=0;
-        if (orientation <= 45 || orientation > 315)
-            quadrant = 0;
-        else if (orientation > 45 && orientation <= 135)
-            quadrant = 1;
-        else if (orientation > 135 && orientation <=225)
-            quadrant = 2;
-        else if (orientation > 225 && orientation <= 315)
-            quadrant = 3;
+        int quadrant=currentQuadrant;
+        int mindeg = (((currentQuadrant==0)?4:currentQuadrant) * 90) - rotationThreshold;
+        int maxdeg = (currentQuadrant * 90) + rotationThreshold;
 
+        switch(currentQuadrant){
+        case 0:
+            if ((orientation > maxdeg) && (orientation < (maxdeg + 90))){
+                quadrant = 1;
+            }
+            else if((orientation < mindeg) && (orientation > (mindeg - 90))){
+                quadrant = 3;
+            }
+            break;
+        case 1:
+            if (orientation > maxdeg){
+                quadrant = 2;
+            }
+            else if (orientation < mindeg){
+                quadrant = 0;
+            }
+            break;
+        case 2:
+            if (orientation > maxdeg){
+                quadrant = 3;
+            }
+            else if (orientation < mindeg){
+                quadrant = 1;
+            }
+            break;
+        case 3:
+            if (orientation > maxdeg){
+                quadrant = 0;
+            }
+            else if (orientation < mindeg){
+                quadrant = 2;
+            }
+            break;
+         default:
+            if (orientation <= 45 || orientation > 315)
+                quadrant = 0;
+            else if (orientation > 45 && orientation <= 135)
+                quadrant = 1;
+            else if (orientation > 135 && orientation <=225)
+                quadrant = 2;
+            else if (orientation > 225 && orientation <= 315)
+                quadrant = 3;
+        }
         return quadrant;
     }
 

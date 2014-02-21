@@ -104,12 +104,10 @@ void Conductor::SetCamera(int deviceId, std::string &deviceUniqueName) {
 
 void Conductor::SetImageOrientation(int degrees)
 {
-  if(imageOrientation_!=degrees) {
     LOG(INFO) << "Conductor::SetImageOrientation " << degrees << ", capturer_:" << capturer_;
     if(capturer_) capturer_->SetCaptureRotation(degrees);
     if(client_) client_->SetVideoRendererRotation(degrees);
     imageOrientation_ = degrees;
-  }
 }
 
 bool Conductor::SetVideo(bool enable) {
