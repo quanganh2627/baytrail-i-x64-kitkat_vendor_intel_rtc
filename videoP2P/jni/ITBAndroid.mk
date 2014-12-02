@@ -77,9 +77,9 @@ LOCAL_CFLAGS := \
 
 # webrtc-unstable/third_party/webrtc/video_engine/test/videoP2P/jni
 LOCAL_C_INCLUDES := \
-    $(call include-path-for, expat-lib) \
-    $(call include-path-for, gtest) \
-    $(call include-path-for, stlport) \
+    external/expat/lib \
+    external/gtest/include \
+    external/stlport/stlport \
     bionic \
     $(WEBRTC_SRC_PATH) \
     $(WEBRTC_SRC_PATH)/voice_engine/include \
@@ -105,8 +105,6 @@ LOCAL_C_INCLUDES := \
 LOCAL_SHARED_LIBRARIES := \
     libGLESv2 \
     libOpenSLES \
-    libva_videodecoder \
-    libva_videoencoder \
     liblog \
     libexpat \
     libicuuc \
