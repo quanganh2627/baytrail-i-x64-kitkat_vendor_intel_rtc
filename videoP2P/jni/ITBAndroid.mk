@@ -31,6 +31,11 @@ include $(CLEAR_VARS)
 LOCAL_MODULE_TAGS := tests
 LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/videoP2P
 LOCAL_MODULE := libwebrtc-video-p2p-jni
+ifeq ($(TARGET_ARCH),x86_64)
+    LOCAL_MULTILIB := 64
+else
+    LOCAL_MULTILIB := 32
+endif
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES := \
     videoclient.cc \

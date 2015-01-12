@@ -37,7 +37,6 @@ import org.webrtc.videoP2P.Peer.PeerType;
 import org.webrtc.videoengine.ViERenderer;
 //import org.webrtc.videoengineapp.ViEAndroidJavaAPI;
 
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -53,6 +52,7 @@ import android.hardware.SensorManager;
 import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.graphics.Bitmap;
@@ -1173,7 +1173,8 @@ public class VideoClient extends Activity {
         //System.loadLibrary("webrtc_voice");
         //System.loadLibrary("jingle");
         //System.loadLibrary("webrtc_video");
-        System.load("/system/lib/videoP2P/libwebrtc-video-p2p-jni.so");
+        String lib_dir=(Build.SUPPORTED_ABIS[0].equals("x86_64"))?"64":"";
+        System.load("/system/lib"+lib_dir+"/videoP2P/libwebrtc-video-p2p-jni.so");
 
         if (!NativeInit()) {
             Log.e(LOG_TAG, "Native init failed");
