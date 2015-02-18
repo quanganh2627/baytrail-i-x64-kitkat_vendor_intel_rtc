@@ -33,6 +33,7 @@
     </receiver>
 
   </application>
+  <supports-screens android:xlargeScreens="true" />
   <uses-sdk android:minSdkVersion="3" />
 
   <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
